@@ -10,9 +10,8 @@ import 'perfil_screen.dart';
 import 'crear_acta_screen.dart';
 import 'firmas_pendientes_screen.dart';
 import 'mis_compromisos_screen.dart';
-
-
-
+import 'notificaciones_screen.dart';
+import '../services/notificaciones_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,11 +25,13 @@ class _HomeScreenState extends State<HomeScreen> {
   DashboardData? _dashboardData;
   bool _isLoading = true;
   String? _error;
+  int _notificacionesNoLeidas = 0;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _cargarContadorNotificaciones();
   }
 
   Future<void> _loadData() async {
@@ -56,6 +57,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _cargarContadorNotificaciones() async {
+    try {
+      final count = await NotificacionesService.contarNoLeidas();
+      if (mounted) {
+        setState(() {
+          _notificacionesNoLeidas = count;
+        });
+      }
+    } catch (e) {
+      // Si hay error, simplemente no mostramos el badge
+    }
+  }
+
   Future<void> _logout() async {
     await AuthService.logout();
     if (mounted) {
@@ -78,6 +92,51 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color(0xFF39A900),
         elevation: 0,
         actions: [
+          // Badge de notificaciones en AppBar
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications, color: Colors.white),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificacionesScreen(),
+                    ),
+                  );
+                  _cargarContadorNotificaciones();
+                },
+                tooltip: 'Notificaciones',
+              ),
+              if (_notificacionesNoLeidas > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      _notificacionesNoLeidas > 99 
+                          ? '99+' 
+                          : _notificacionesNoLeidas.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadData,
@@ -214,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.assignment_turned_in),
-            title: const Text(' Mis Compromisos'),
+            title: const Text('Mis Compromisos'),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -223,6 +282,51 @@ class _HomeScreenState extends State<HomeScreen> {
                   builder:(context) => const MisCompromisosScreen()
                   ),
               );
+            },
+          ),
+          ListTile(
+            leading: Stack(
+              children: [
+                const Icon(Icons.notifications),
+                if (_notificacionesNoLeidas > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      child: Text(
+                        _notificacionesNoLeidas > 99 
+                            ? '99+' 
+                            : _notificacionesNoLeidas.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            title: const Text('Notificaciones'),
+            onTap: () async {
+              Navigator.pop(context);
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificacionesScreen(),
+                ),
+              );
+              _cargarContadorNotificaciones();
             },
           ),
           const Divider(),
@@ -259,9 +363,9 @@ class _HomeScreenState extends State<HomeScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 8),
           Text(
-            _usuario?.rol ?? 'Centro Minero SENA',
+            DateFormat('EEEE, d MMMM yyyy', 'es').format(DateTime.now()),
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 14,
@@ -273,9 +377,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStats() {
-    if (_dashboardData == null) return const SizedBox();
-
-    final stats = _dashboardData!.estadisticas;
+    if (_dashboardData == null) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -285,17 +387,17 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Total de Actas',
-                  (stats.totalActas ?? 0).toString(),
+                  'Total Actas',
+                  _dashboardData!.estadisticas.totalActas.toString(),
                   Icons.description,
-                  Colors.blue,
+                  const Color(0xFF39A900),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
                   'Firmas Pendientes',
-                  (stats.firmasPendientes ?? 0).toString(),
+                  _dashboardData!.estadisticas.firmasPendientes.toString(),
                   Icons.edit,
                   Colors.orange,
                 ),
@@ -307,19 +409,19 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Compromisos Activos',
-                  (stats.compromisosActivos ?? 0).toString(),
-                  Icons.assignment,
-                  Colors.cyan,
+                  'Mis Actas',
+                  _dashboardData!.estadisticas.totalActas.toString(),
+                  Icons.person,
+                  Colors.blue,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Compromisos Vencidos',
-                  (stats.compromisosVencidos ?? 0).toString(),
-                  Icons.warning,
-                  Colors.red,
+                  'Compromisos',
+                  _dashboardData!.estadisticas.compromisosActivos.toString(),
+                  Icons.assignment_turned_in,
+                  Colors.purple,
                 ),
               ),
             ],
@@ -346,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          Icon(icon, size: 40, color: color),
+          Icon(icon, size: 32, color: color),
           const SizedBox(height: 8),
           Text(
             value,
@@ -359,11 +461,11 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 4),
           Text(
             title,
-            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 12,
               color: Colors.grey,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -381,7 +483,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return _buildSection(
       'Actas Recientes',
-      Icons.access_time,
+      Icons.description,
       Column(
         children: _dashboardData!.actasRecientes.map((acta) {
           return _buildActaCard(acta);
@@ -392,6 +494,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildActaCard(ActaReciente acta) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    Color statusColor = Colors.grey;
+    
+    switch (acta.estado) {
+      case 'borrador':
+        statusColor = Colors.orange;
+        break;
+      case 'en_revision':
+        statusColor = Colors.blue;
+        break;
+      case 'finalizada':
+        statusColor = Colors.green;
+        break;
+      case 'archivada':
+        statusColor = Colors.grey;
+        break;
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -399,10 +517,10 @@ class _HomeScreenState extends State<HomeScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: acta.estadoColor.withOpacity(0.1),
+            color: statusColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(Icons.description, color: acta.estadoColor),
+          child: Icon(Icons.description, color: statusColor),
         ),
         title: Text(
           acta.numeroActa,
@@ -418,7 +536,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: acta.estadoColor,
+                    color: statusColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -426,12 +544,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  dateFormat.format(acta.fechaReunion),
+                  dateFormat.format(acta.fechaCreacion),
                   style: const TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],
@@ -440,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // TODO: Navegar a detalle de acta
+          // TODO: Navegar a detalle del acta
         },
       ),
     );
@@ -450,7 +569,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_dashboardData == null || _dashboardData!.firmasPendientes.isEmpty) {
       return _buildEmptySection(
         'Firmas Pendientes',
-        Icons.check_circle,
+        Icons.edit,
         'No hay firmas pendientes',
       );
     }
@@ -467,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFirmaCard(FirmaPendiente firma) {
-    final dateFormat = DateFormat('dd/MM/yyyy');
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -531,7 +650,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCompromisoCard(CompromisoProximo compromiso) {
-    final dateFormat = DateFormat('dd/MM/yyyy');
     Color statusColor = Colors.cyan;
     
     if (compromiso.estaVencido) {
@@ -575,8 +693,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 4),
                 Text(
                   compromiso.estaVencido
-                      ? 'Vencido hace ${-(compromiso.diasRestantes ?? 0)} días'
-                      : 'Vence en ${compromiso.diasRestantes ?? 0} días',
+                      ? 'Vencido hace ${-compromiso.diasRestantes} días'
+                      : 'Vence en ${compromiso.diasRestantes} días',
                   style: TextStyle(
                     fontSize: 11,
                     color: statusColor,
@@ -587,13 +705,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 4),
             LinearProgressIndicator(
-              value: (compromiso.porcentajeAvance ?? 0) / 100,
+              value: compromiso.porcentajeAvance / 100,
               backgroundColor: Colors.grey[200],
               valueColor: AlwaysStoppedAnimation<Color>(statusColor),
             ),
             const SizedBox(height: 2),
             Text(
-              '${compromiso.porcentajeAvance ?? 0}% completado',
+              '${compromiso.porcentajeAvance}% completado',
               style: const TextStyle(fontSize: 10, color: Colors.grey),
             ),
           ],
@@ -681,7 +799,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                Icon(Icons.check_circle, size: 48, color: const Color(0xFF39A900)),
+                const Icon(Icons.check_circle, size: 48, color: Color(0xFF39A900)),
                 const SizedBox(height: 12),
                 Text(
                   message,
@@ -704,9 +822,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Error al cargar datos',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),

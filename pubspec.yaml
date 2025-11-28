@@ -43,6 +43,8 @@ dependencies:
   
   # State Management
   provider: ^6.1.1
+
+  timeago: ^3.7.0
   
   # Storage (tokens, cache)
   shared_preferences: ^2.2.2
