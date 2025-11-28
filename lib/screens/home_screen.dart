@@ -9,6 +9,8 @@ import 'actas_list_screen.dart';
 import 'perfil_screen.dart';
 import 'crear_acta_screen.dart';
 import 'firmas_pendientes_screen.dart';
+import 'mis_compromisos_screen.dart';
+
 
 
 
@@ -186,7 +188,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
                 MaterialPageRoute(builder: (context)=> const ActasListScreen())
               );
-              // TODO: Navegar a mis actas
             },
           ),
           ListTile(
@@ -212,11 +213,16 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.assignment),
-            title: const Text('Compromisos'),
+            leading: const Icon(Icons.assignment_turned_in),
+            title: const Text(' Mis Compromisos'),
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navegar a compromisos
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:(context) => const MisCompromisosScreen()
+                  ),
+              );
             },
           ),
           const Divider(),
