@@ -4,7 +4,9 @@ import '../models/acta.dart';
 import '../services/actas_service.dart';
 import '../services/firmas_service.dart';
 import 'firmar_acta_screen.dart';
-import '../models/firma_pendiente.dart';
+import 'editar_acta_screen.dart';
+import '../services/pdf_service.dart';
+import 'package:open_file/open_file.dart';
 
 class ActaDetalleScreen extends StatefulWidget {
   final int actaId;
@@ -595,9 +597,7 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
   }
 
   Widget _buildCompromisos() {
-    if (_acta == null || _acta!.compromisos.isEmpty) {
-      return _buildEmptySection('Compromisos', Icons.assignment);
-    }
+    if (_acta == null) return const SizedBox();
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -640,9 +640,21 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
             ],
           ),
           const Divider(height: 20),
-          ...(_acta!.compromisos.map((compromiso) {
-            return _buildCompromisoCard(compromiso);
-          })),
+          // Lista de compromisos
+          if (_acta!.compromisos.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Text(
+                  'No hay compromisos registrados',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            )
+          else
+            ...(_acta!.compromisos.map((compromiso) {
+              return _buildCompromisoCard(compromiso);
+            })),
         ],
       ),
     );
@@ -771,6 +783,52 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
       margin: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // Botón: Descargar PDF (disponible para todos)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : _descargarPdf,
+              icon: const Icon(Icons.picture_as_pdf),
+              label: const Text('Descargar PDF'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[700],
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Botón: Editar Acta (solo si está en borrador y tiene permisos)
+          if (_acta!.estado == 'borrador' && _acta!.permisosUsuario.puedeEditar) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isLoading ? null : () async {
+                  final resultado = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditarActaScreen(acta: _acta!),
+                    ),
+                  );
+
+                  // Si se guardaron cambios, recargar el acta
+                  if (resultado == true && mounted) {
+                    _loadActa();
+                  }
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('Editar Acta'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // Botón: Enviar a Revisión (solo si está en borrador)
           if (_acta!.estado == 'borrador') ...[
             SizedBox(
@@ -846,5 +904,84 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _descargarPdf() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Mostrar diálogo de descarga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('Descargando PDF...'),
+            ],
+          ),
+        ),
+      );
+
+      // Descargar PDF
+      final filePath = await PdfService.descargarPdfActa(_acta!.id);
+
+      // Cerrar diálogo de descarga
+      if (mounted) Navigator.pop(context);
+
+      setState(() => _isLoading = false);
+
+      // Mostrar diálogo de éxito
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green, size: 30),
+                SizedBox(width: 10),
+                Text('PDF Descargado'),
+              ],
+            ),
+            content: Text('El PDF se guardó en:\n$filePath'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await OpenFile.open(filePath);
+                },
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Abrir PDF'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[700],
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Cerrar diálogo de descarga si está abierto
+      if (mounted) Navigator.pop(context);
+
+      setState(() => _isLoading = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 }

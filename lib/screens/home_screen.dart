@@ -280,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _buildStatCard(
                   'Total de Actas',
-                  stats.totalActas.toString(),
+                  (stats.totalActas ?? 0).toString(),
                   Icons.description,
                   Colors.blue,
                 ),
@@ -289,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _buildStatCard(
                   'Firmas Pendientes',
-                  stats.firmasPendientes.toString(),
+                  (stats.firmasPendientes ?? 0).toString(),
                   Icons.edit,
                   Colors.orange,
                 ),
@@ -302,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _buildStatCard(
                   'Compromisos Activos',
-                  stats.compromisosActivos.toString(),
+                  (stats.compromisosActivos ?? 0).toString(),
                   Icons.assignment,
                   Colors.cyan,
                 ),
@@ -311,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _buildStatCard(
                   'Compromisos Vencidos',
-                  stats.compromisosVencidos.toString(),
+                  (stats.compromisosVencidos ?? 0).toString(),
                   Icons.warning,
                   Colors.red,
                 ),
@@ -569,8 +569,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 4),
                 Text(
                   compromiso.estaVencido
-                      ? 'Vencido hace ${-compromiso.diasRestantes} días'
-                      : 'Vence en ${compromiso.diasRestantes} días',
+                      ? 'Vencido hace ${-(compromiso.diasRestantes ?? 0)} días'
+                      : 'Vence en ${compromiso.diasRestantes ?? 0} días',
                   style: TextStyle(
                     fontSize: 11,
                     color: statusColor,
@@ -581,13 +581,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 4),
             LinearProgressIndicator(
-              value: compromiso.porcentajeAvance / 100,
+              value: (compromiso.porcentajeAvance ?? 0) / 100,
               backgroundColor: Colors.grey[200],
               valueColor: AlwaysStoppedAnimation<Color>(statusColor),
             ),
             const SizedBox(height: 2),
             Text(
-              '${compromiso.porcentajeAvance}% completado',
+              '${compromiso.porcentajeAvance ?? 0}% completado',
               style: const TextStyle(fontSize: 10, color: Colors.grey),
             ),
           ],

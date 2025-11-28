@@ -179,10 +179,13 @@ class ActasService {
         final data = json.decode(response.body);
         return {
           'success': true,
-          'contenido': data['data']['contenido'],
+          // ✅ CAMBIO: Ahora recibimos orden_dia y desarrollo por separado
+          'orden_dia': data['data']['orden_dia'],      // ← NUEVO
+          'desarrollo': data['data']['desarrollo'],    // ← NUEVO
           'modelo_usado': data['data']['modelo_usado'],
         };
-      } else {
+      }
+      else {
         final data = json.decode(response.body);
         throw Exception(data['error'] ?? 'Error al generar con IA');
       }
@@ -213,6 +216,57 @@ class ActasService {
       } else {
         final data = json.decode(response.body);
         throw Exception(data['error'] ?? 'Error al cambiar estado');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> editarActa({
+    required int actaId,
+    required String titulo,
+    required String fechaReunion,
+    required String lugarReunion,
+    required String tipoReunion,
+    required String modalidad,
+    String ordenDia = '',
+    String desarrollo = '',
+    String observaciones = '',
+    List<Map<String, dynamic>> participantes = const [],
+  }) async {
+    try {
+      final token = await ApiService.getToken();
+
+      if (token == null) {
+        throw Exception('No autenticado');
+      }
+
+      final response = await ApiService.put(
+        '/actas/api/actas/$actaId/editar/',
+        {
+          'titulo': titulo,
+          'fecha_reunion': fechaReunion,
+          'lugar_reunion': lugarReunion,
+          'tipo_reunion': tipoReunion,
+          'modalidad': modalidad,
+          'orden_dia': ordenDia,
+          'desarrollo': desarrollo,
+          'observaciones': observaciones,
+          'participantes': participantes,
+        },
+        token: token,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': true,
+          'message': data['message'],
+          'cambios_realizados': data['data']['cambios_realizados'],
+        };
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['error'] ?? 'Error al editar acta');
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');

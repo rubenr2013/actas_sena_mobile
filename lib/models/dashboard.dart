@@ -16,14 +16,14 @@ class DashboardData {
   factory DashboardData.fromJson(Map<String, dynamic> json) {
     return DashboardData(
       estadisticas: Estadisticas.fromJson(json['estadisticas']),
-      actasRecientes: (json['actas_recientes'] as List)
-          .map((e) => ActaReciente.fromJson(e))
+      actasRecientes: (json['actas_recientes'] as List? ?? [])
+          .map((item) => ActaReciente.fromJson(item))
           .toList(),
-      firmasPendientes: (json['firmas_pendientes'] as List)
-          .map((e) => FirmaPendiente.fromJson(e))
+      firmasPendientes: (json['firmas_pendientes'] as List? ?? [])
+          .map((item) => FirmaPendiente.fromJson(item))
           .toList(),
-      compromisosProximos: (json['compromisos_proximos'] as List)
-          .map((e) => CompromisoProximo.fromJson(e))
+      compromisosProximos: (json['compromisos_proximos'] as List? ?? [])
+          .map((item) => CompromisoProximo.fromJson(item))
           .toList(),
     );
   }
@@ -173,11 +173,11 @@ class CompromisoProximo {
   factory CompromisoProximo.fromJson(Map<String, dynamic> json) {
     return CompromisoProximo(
       id: json['id'],
-      descripcion: json['descripcion'],
+      descripcion: json['descripcion'] ?? '',
       fechaLimite: DateTime.parse(json['fecha_limite']),
-      estado: json['estado'],
-      porcentajeAvance: json['porcentaje_avance'],
-      diasRestantes: json['dias_restantes'],
+      estado: json['estado'] ?? '',
+      porcentajeAvance: json['porcentaje_avance'] ?? 0,
+      diasRestantes: json['dias_restantes'] ?? 0,
       acta: ActaInfo.fromJson(json['acta']),
     );
   }

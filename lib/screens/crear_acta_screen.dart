@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/actas_service.dart';
 import 'acta_detalle_screen.dart';
+import '../services/compromisos_service.dart';
 
 class CrearActaScreen extends StatefulWidget {
   const CrearActaScreen({super.key});
@@ -32,6 +33,7 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
   // Participantes
   List<Map<String, dynamic>> _todosUsuarios = [];
   List<Map<String, dynamic>> _participantesSeleccionados = [];
+  List<Map<String, dynamic>> _compromisosTemp = [];
   bool _cargandoUsuarios = false;
 
   @override
@@ -84,8 +86,9 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
       
       if (resultado['success']) {
         setState(() {
-          _ordenDiaController.text = resultado['contenido'];
-          _desarrolloController.text = resultado['contenido'];
+          // ✅ CAMBIO: Ahora asignamos los campos separados correctamente
+          _ordenDiaController.text = resultado['orden_dia'];      // ← AGENDA
+          _desarrolloController.text = resultado['desarrollo'];   // ← DESARROLLO
           _isLoading = false;
         });
         
@@ -112,67 +115,88 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
   }
 
   Future<void> _crearActa() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
 
-    if (_participantesSeleccionados.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes agregar al menos un participante')),
-      );
-      return;
-    }
+  if (_participantesSeleccionados.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Debes agregar al menos un participante')),
+    );
+    return;
+  }
 
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      final resultado = await ActasService.crearActa(
-        titulo: _tituloController.text,
-        fechaReunion: _fechaReunion.toIso8601String(),
-        lugarReunion: _lugarController.text,
-        tipoReunion: _tipoReunion,
-        modalidad: _modalidad,
-        ordenDia: _ordenDiaController.text,
-        desarrollo: _desarrolloController.text,
-        observaciones: _observacionesController.text,
-        participantes: _participantesSeleccionados,
-        generadaConIa: _usarIA,
-        promptOriginal: _usarIA ? _promptIAController.text : '',
-        modeloIaUsado: _usarIA ? 'llama-3.3-70b-versatile' : '',
-      );
+  try {
+    // PASO 1: Crear el acta
+    final resultado = await ActasService.crearActa(
+      titulo: _tituloController.text,
+      fechaReunion: _fechaReunion.toIso8601String(),
+      lugarReunion: _lugarController.text,
+      tipoReunion: _tipoReunion,
+      modalidad: _modalidad,
+      ordenDia: _ordenDiaController.text,
+      desarrollo: _desarrolloController.text,
+      observaciones: _observacionesController.text,
+      participantes: _participantesSeleccionados,
+      generadaConIa: _usarIA,
+      promptOriginal: _usarIA ? _promptIAController.text : '',
+      modeloIaUsado: _usarIA ? 'llama-3.3-70b-versatile' : '',
+    );
 
-      setState(() => _isLoading = false);
-
-      if (resultado['success']) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Acta ${resultado['numero_acta']} creada correctamente'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          
-          // Navegar al detalle de la acta creada
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ActaDetalleScreen(actaId: resultado['acta_id']),
-            ),
-          );
+    if (resultado['success']) {
+      final actaId = resultado['acta_id'];
+      
+      // PASO 2: Guardar compromisos si existen
+      if (_compromisosTemp.isNotEmpty) {
+        for (var compromiso in _compromisosTemp) {
+          try {
+            await CompromisosService.crearCompromiso(
+              actaId: actaId,
+              descripcion: compromiso['descripcion'],
+              responsableId: compromiso['responsable_id'],
+              fechaLimite: compromiso['fecha_limite'],
+              observaciones: compromiso['observaciones'],
+            );
+          } catch (e) {
+            print('Error al guardar compromiso: $e');
+            // Continuar con los demás aunque uno falle
+          }
         }
       }
-    } catch (e) {
+
       setState(() => _isLoading = false);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            content: Text('Acta ${resultado['numero_acta']} creada correctamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Navegar al detalle de la acta creada
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ActaDetalleScreen(actaId: actaId),
           ),
         );
       }
     }
+  } catch (e) {
+    setState(() => _isLoading = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +214,7 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
         child: Stepper(
           currentStep: _currentStep,
           onStepContinue: () {
-            if (_currentStep < 3) {
+            if (_currentStep < 4) {
               setState(() => _currentStep++);
             } else {
               _crearActa();
@@ -221,7 +245,7 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Text(_currentStep == 3 ? 'Crear Acta' : 'Continuar'),
+                        : Text(_currentStep == 4 ? 'Crear Acta' : 'Continuar'),
                   ),
                   const SizedBox(width: 12),
                   if (_currentStep > 0)
@@ -249,6 +273,11 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
               content: _buildStepContenido(),
               isActive: _currentStep >= 2,
             ),
+            Step(
+              title: const Text('Compromisos'),
+              content: _buildStepCompromisos(),
+              isActive: _currentStep >= 3,
+              ),
             Step(
               title: const Text('Revisión'),
               content: _buildStepRevision(),
@@ -621,6 +650,7 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
         _buildRevisionItem('Tipo', _getTipoReunionText(_tipoReunion)),
         _buildRevisionItem('Modalidad', _getModalidadText(_modalidad)),
         _buildRevisionItem('Participantes', '${_participantesSeleccionados.length} persona(s)'),
+        _buildRevisionItem('Compromisos', '${_compromisosTemp.length} compromiso(s)'),
         
         if (_usarIA)
           Container(
@@ -682,5 +712,333 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
       case 'hibrida': return 'Híbrida';
       default: return modalidad;
     }
+  }
+
+  // ========================================
+  // FUNCIONES PARA COMPROMISOS
+  // ========================================
+
+  Widget _buildStepCompromisos() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Agregar compromisos que surgieron de la reunión',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+        const SizedBox(height: 16),
+
+        // Botón agregar compromiso
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _mostrarDialogoAgregarCompromiso,
+            icon: const Icon(Icons.add),
+            label: const Text('Agregar Compromiso'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF39A900),
+              side: const BorderSide(color: Color(0xFF39A900)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Lista de compromisos agregados
+        if (_compromisosTemp.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text(
+                'No has agregado compromisos aún',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          ..._compromisosTemp.asMap().entries.map((entry) {
+            final index = entry.key;
+            final compromiso = entry.value;
+            return _buildCompromisoCard(compromiso, index);
+          }),
+      ],
+    );
+  }
+
+  Widget _buildCompromisoCard(Map<String, dynamic> compromiso, int index) {
+    final dateFormat = DateFormat('dd/MM/yyyy');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    compromiso['descripcion'],
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                  onPressed: () {
+                    setState(() {
+                      _compromisosTemp.removeAt(index);
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.person, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  compromiso['responsable_nombre'],
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 14, color: Color(0xFF39A900)),
+                const SizedBox(width: 4),
+                Text(
+                  'Vence: ${dateFormat.format(DateTime.parse(compromiso['fecha_limite']))}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF39A900),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            if (compromiso['observaciones'] != null && compromiso['observaciones'].isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                compromiso['observaciones'],
+                style: const TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _mostrarDialogoAgregarCompromiso() {
+    if (_participantesSeleccionados.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Primero agrega participantes en el paso anterior'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final descripcionController = TextEditingController();
+    final observacionesController = TextEditingController();
+    Map<String, dynamic>? responsableSeleccionado;
+    DateTime? fechaSeleccionada;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Agregar Compromiso'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Descripción
+                    const Text(
+                      'Descripción *',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: descripcionController,
+                      decoration: const InputDecoration(
+                        hintText: 'Describe el compromiso...',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Responsable
+                    const Text(
+                      'Responsable *',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<Map<String, dynamic>>(
+                      value: responsableSeleccionado,
+                      decoration: const InputDecoration(
+                        hintText: 'Selecciona un responsable',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _participantesSeleccionados.map((participante) {
+                        return DropdownMenuItem<Map<String, dynamic>>(
+                          value: participante,
+                          child: Text(participante['nombre_completo']),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          responsableSeleccionado = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Fecha límite
+                    const Text(
+                      'Fecha Límite *',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () async {
+                        final fecha = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now().add(const Duration(days: 7)),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (fecha != null) {
+                          setStateDialog(() {
+                            fechaSeleccionada = fecha;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today, color: Color(0xFF39A900)),
+                            const SizedBox(width: 12),
+                            Text(
+                              fechaSeleccionada != null
+                                  ? DateFormat('dd/MM/yyyy').format(fechaSeleccionada!)
+                                  : 'Selecciona una fecha',
+                              style: TextStyle(
+                                color: fechaSeleccionada != null ? Colors.black : Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Observaciones
+                    const Text(
+                      'Observaciones (opcional)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: observacionesController,
+                      decoration: const InputDecoration(
+                        hintText: 'Observaciones adicionales...',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Validar campos
+                    if (descripcionController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('La descripción es obligatoria'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (responsableSeleccionado == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Debes seleccionar un responsable'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (fechaSeleccionada == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Debes seleccionar una fecha límite'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Agregar a la lista temporal
+                    setState(() {
+                      _compromisosTemp.add({
+                        'descripcion': descripcionController.text.trim(),
+                        'responsable_id': responsableSeleccionado!['usuario_id'],
+                        'responsable_nombre': responsableSeleccionado!['nombre_completo'],
+                        'fecha_limite': DateFormat('yyyy-MM-dd').format(fechaSeleccionada!),
+                        'observaciones': observacionesController.text.trim(),
+                      });
+                    });
+
+                    Navigator.pop(context);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Compromiso agregado a la lista'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF39A900),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Agregar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }
