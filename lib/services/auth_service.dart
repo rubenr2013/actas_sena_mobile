@@ -2,6 +2,7 @@ import 'dart:convert';
 import '../models/usuario.dart';
 import 'api_service.dart';
 import '../utils/constants.dart';
+
 class AuthService {
   // Login
   static Future<Map<String, dynamic>> login(
@@ -45,6 +46,49 @@ class AuthService {
         return {
           'success': false,
           'error': data['error'] ?? 'Error al iniciar sesión',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  // Registro de nuevo usuario
+  static Future<Map<String, dynamic>> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+    required String rol,
+    String? telefono,
+  }) async {
+    try {
+      final response = await ApiService.post(
+        '/actas/api/auth/register/',
+        {
+          'first_name': firstName,
+          'last_name': lastName,
+          'email': email,
+          'password': password,
+          'rol': rol,
+          'telefono': telefono ?? '',
+        },
+      );
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Cuenta creada correctamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Error al crear cuenta',
         };
       }
     } catch (e) {
@@ -119,5 +163,3 @@ class AuthService {
     }
   }
 }
-
-

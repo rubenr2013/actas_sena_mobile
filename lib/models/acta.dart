@@ -127,6 +127,9 @@ class ActaDetalle {
   final bool generadaConIa;
   final String? promptOriginal;
   final String? modeloIaUsado;
+  final DateTime? fechaLimiteFirmas;
+  final bool silencioAdministrativo;
+  final bool puedeAplicarSilencio;
   final Creador creador;
   final List<Participante> participantes;
   final List<Compromiso> compromisos;
@@ -150,6 +153,9 @@ class ActaDetalle {
     required this.generadaConIa,
     this.promptOriginal,
     this.modeloIaUsado,
+    this.fechaLimiteFirmas,
+    required this.silencioAdministrativo,
+    required this.puedeAplicarSilencio,
     required this.creador,
     required this.participantes,
     required this.compromisos,
@@ -175,6 +181,11 @@ class ActaDetalle {
       generadaConIa: json['generada_con_ia'],
       promptOriginal: json['prompt_original'],
       modeloIaUsado: json['modelo_ia_usado'],
+      fechaLimiteFirmas: json['fecha_limite_firmas'] != null
+          ? DateTime.parse(json['fecha_limite_firmas'])
+          : null,
+      silencioAdministrativo: json['silencio_administrativo'] ?? false,
+      puedeAplicarSilencio: json['puede_aplicar_silencio'] ?? false,
       creador: Creador.fromJson(json['creador']),
       participantes: (json['participantes'] as List)
           .map((p) => Participante.fromJson(p))

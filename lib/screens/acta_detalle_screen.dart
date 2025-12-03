@@ -119,6 +119,74 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
     }
   }
 
+  Future<void> _aplicarSilencioAdministrativo() async {
+    // Confirmar con el usuario
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.gavel, color: Colors.orange),
+            SizedBox(width: 10),
+            Text('Aplicar Silencio Administrativo'),
+          ],
+        ),
+        content: const Text(
+          'Se aplicará silencio administrativo a esta acta. '
+          'Todas las firmas pendientes serán marcadas como firmadas automáticamente '
+          'y el acta pasará a estado "Finalizada".\n\n'
+          '¿Deseas continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Aplicar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final resultado = await ActasService.aplicarSilencioAdministrativo(widget.actaId);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(resultado['message'] ?? 'Silencio administrativo aplicado'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // Recargar el acta
+        _loadActa();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -842,6 +910,52 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Botón: Aplicar Silencio Administrativo (solo si cumple condiciones)
+          if (_acta!.estado == 'en_revision' && _acta!.puedeAplicarSilencio) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'El plazo de firmas ha vencido. Puedes aplicar silencio administrativo.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _aplicarSilencioAdministrativo,
+                      icon: const Icon(Icons.gavel),
+                      label: const Text('Aplicar Silencio Administrativo'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 12),

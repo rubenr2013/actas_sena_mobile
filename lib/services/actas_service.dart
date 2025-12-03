@@ -272,4 +272,35 @@ class ActasService {
       throw Exception('Error de conexión: $e');
     }
   }
+
+  /// Aplicar silencio administrativo a un acta
+  static Future<Map<String, dynamic>> aplicarSilencioAdministrativo(int actaId) async {
+    try {
+      final token = await ApiService.getToken();
+      if (token == null) {
+        throw Exception('No hay sesión activa');
+      }
+
+      final response = await ApiService.post(
+        '/actas/api/actas/$actaId/aplicar-silencio/',
+        {},
+        token: token,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data;
+      } else if (response.statusCode == 400 || response.statusCode == 404) {
+        final data = json.decode(response.body);
+        throw Exception(data['error'] ?? 'No se puede aplicar silencio administrativo');
+      } else if (response.statusCode == 401) {
+        throw Exception('Sesión expirada');
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['error'] ?? 'Error al aplicar silencio administrativo');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
 }
