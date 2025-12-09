@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../models/perfil.dart';
 import '../services/perfil_service.dart';
 import '../services/auth_service.dart';
@@ -18,6 +20,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
   Perfil? _perfil;
   bool _isLoading = true;
   String? _error;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -43,6 +46,154 @@ class _PerfilScreenState extends State<PerfilScreen> {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _cambiarFirma() async {
+    // Mostrar opciones: Cámara o Galería
+    final origen = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera, color: Color(0xFF39A900)),
+              title: const Text('Tomar foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Color(0xFF39A900)),
+              title: const Text('Seleccionar de galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cancel, color: Colors.grey),
+              title: const Text('Cancelar'),
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (origen == null) return;
+
+    try {
+      // Seleccionar imagen
+      final XFile? imagen = await _picker.pickImage(
+        source: origen,
+        maxWidth: 800,
+        maxHeight: 400,
+        imageQuality: 85,
+      );
+
+      if (imagen == null) return;
+
+      // Confirmar antes de subir
+      if (!mounted) return;
+      final confirmar = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Confirmar'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('¿Deseas actualizar tu firma digital con esta imagen?'),
+              const SizedBox(height: 16),
+              Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    File(imagen.path),
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF39A900),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Actualizar'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmar != true) return;
+
+      // Mostrar loading
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: Color(0xFF39A900)),
+                    SizedBox(height: 16),
+                    Text('Actualizando firma...'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      // Subir imagen
+      final resultado = await PerfilService.actualizarFirma(File(imagen.path));
+
+      if (mounted) {
+        Navigator.pop(context); // Cerrar loading
+
+        if (resultado['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(resultado['message'] ?? 'Firma actualizada correctamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Recargar perfil
+          _loadPerfil();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(resultado['error'] ?? 'Error al actualizar firma'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Cerrar loading si está abierto
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -258,7 +409,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 Text(
                   value,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -312,10 +463,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'En Borrador',
-                  _perfil!.stats.actasEnBorrador.toString(),
-                  Icons.edit,
-                  Colors.grey,
+                  'Finalizadas',
+                  _perfil!.stats.actasFinalizadas.toString(),
+                  Icons.check_circle,
+                  Colors.green,
                 ),
               ),
             ],
@@ -325,16 +476,16 @@ class _PerfilScreenState extends State<PerfilScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Finalizadas',
-                  _perfil!.stats.actasFinalizadas.toString(),
-                  Icons.check_circle,
-                  Colors.green,
+                  'En Borrador',
+                  _perfil!.stats.actasEnBorrador.toString(),
+                  Icons.rate_review,
+                  Colors.purple,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Firmas Pendientes',
+                  'Firmas Pend.',
                   _perfil!.stats.firmasPendientes.toString(),
                   Icons.pending,
                   Colors.orange,
@@ -423,12 +574,30 @@ class _PerfilScreenState extends State<PerfilScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Firma Digital',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Firma Digital',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _cambiarFirma,
+                icon: Icon(
+                  _perfil!.user.tieneFirma ? Icons.edit : Icons.add_photo_alternate,
+                  size: 20,
+                ),
+                label: Text(
+                  _perfil!.user.tieneFirma ? 'Cambiar' : 'Agregar',
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF39A900),
+                ),
+              ),
+            ],
           ),
           const Divider(height: 20),
           if (_perfil!.user.tieneFirma && _perfil!.user.firmaDigital != null)
@@ -455,11 +624,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
+                const Row(
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                    const SizedBox(width: 8),
-                    const Text(
+                    Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    SizedBox(width: 8),
+                    Text(
                       'Firma digital configurada',
                       style: TextStyle(
                         color: Colors.green,
@@ -478,11 +647,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.orange),
               ),
-              child: Row(
+              child: const Row(
                 children: [
-                  const Icon(Icons.warning, color: Colors.orange),
-                  const SizedBox(width: 12),
-                  const Expanded(
+                  Icon(Icons.warning, color: Colors.orange),
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Text(
                       'No tienes firma digital configurada',
                       style: TextStyle(color: Colors.orange),
@@ -550,7 +719,19 @@ class _PerfilScreenState extends State<PerfilScreen> {
             ),
           ),
           const SizedBox(height: 12),
-
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _logout,
+              icon: const Icon(Icons.logout),
+              label: const Text('Cerrar Sesión'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red,
+                side: const BorderSide(color: Colors.red),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
         ],
       ),
     );

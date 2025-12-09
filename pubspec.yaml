@@ -61,6 +61,8 @@ dependencies:
   open_file: ^3.3.2          # Para abrir el PDF descargado
 
   signature: ^5.4.0
+  image_picker: ^1.1.2
+  http_parser: ^4.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

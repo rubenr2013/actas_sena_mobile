@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import '../models/usuario.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
+import 'Forgotpasswordscreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -265,6 +266,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Botón Olvidé mi contraseña
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    '¿Olvidaste tu contraseña?',
+                    style: TextStyle(
+                      color: Colors.white,
+                      decoration: TextDecoration.underline,
                     ),
                   ),
                 ),

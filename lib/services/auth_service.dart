@@ -99,6 +99,109 @@ class AuthService {
     }
   }
 
+  // Solicitar código de recuperación
+  static Future<Map<String, dynamic>> solicitarCodigoRecuperacion(String email) async {
+    try {
+      final response = await ApiService.post(
+        '/actas/api/auth/solicitar-codigo/',
+        {
+          'email': email,
+        },
+      );
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Código enviado al correo',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Error al enviar código',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  // Verificar código de recuperación
+  static Future<Map<String, dynamic>> verificarCodigo({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      final response = await ApiService.post(
+        '/actas/api/auth/verificar-codigo/',
+        {
+          'email': email,
+          'code': code,
+        },
+      );
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Código verificado',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Código inválido o expirado',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  // Resetear contraseña
+  static Future<Map<String, dynamic>> resetearPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await ApiService.post(
+        '/actas/api/auth/resetear-password/',
+        {
+          'email': email,
+          'code': code,
+          'new_password': newPassword,
+        },
+      );
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Contraseña actualizada correctamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Error al actualizar contraseña',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error de conexión: $e',
+      };
+    }
+  }
+
   // Logout
   static Future<void> logout() async {
     await ApiService.clearAllData();
