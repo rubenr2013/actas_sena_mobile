@@ -7,7 +7,8 @@ import '../services/perfil_service.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'editar_perfil_screen.dart';
-import 'cambiar_password_screen.dart'; 
+import 'cambiar_password_screen.dart';
+import 'backup_personal_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -714,6 +715,29 @@ class _PerfilScreenState extends State<PerfilScreen> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF39A900),
                 side: const BorderSide(color: Color(0xFF39A900)),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Botón Mis Datos (Backup Personal)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BackupPersonalScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.folder_copy),
+              label: const Text('Mis Datos (Backup)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
