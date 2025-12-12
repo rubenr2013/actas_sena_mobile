@@ -1,13 +1,8 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'api_service.dart';
-
-// Importar para Web
-import 'dart:html' as html;
-import 'dart:convert';
 
 class PdfService {
   /// Descargar PDF del acta
@@ -30,14 +25,8 @@ class PdfService {
       );
 
       if (response.statusCode == 200) {
-        // Manejar descarga según plataforma
-        if (kIsWeb) {
-          // FLUTTER WEB
-          return await _descargarPdfWeb(response.bodyBytes, actaId);
-        } else {
-          // FLUTTER MÓVIL (Android/iOS)
-          return await _descargarPdfMovil(response.bodyBytes, actaId);
-        }
+        // Descargar en móvil (Android/iOS)
+        return await _descargarPdfMovil(response.bodyBytes, actaId);
       } else if (response.statusCode == 401) {
         throw Exception('Sesión expirada');
       } else if (response.statusCode == 403) {
@@ -50,26 +39,6 @@ class PdfService {
     } catch (e) {
       throw Exception('Error al descargar PDF: $e');
     }
-  }
-
-  /// Descargar PDF en Flutter Web
-  static Future<String> _descargarPdfWeb(List<int> pdfBytes, int actaId) async {
-    // Crear blob
-    final blob = html.Blob([pdfBytes], 'application/pdf');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    
-    // Crear nombre del archivo
-    final fileName = 'ACTA_$actaId.pdf';
-    
-    // Crear enlace de descarga
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', fileName)
-      ..click();
-    
-    // Limpiar
-    html.Url.revokeObjectUrl(url);
-    
-    return 'Descargado: $fileName (revisa tu carpeta de Descargas)';
   }
 
   /// Descargar PDF en Flutter Móvil (Android/iOS)
@@ -85,7 +54,7 @@ class PdfService {
     
     // Crear nombre del archivo
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final fileName = 'ACTA_$actaId\_$timestamp.pdf';
+    final fileName = 'ACTA_${actaId}_$timestamp.pdf';
     final filePath = '${directory.path}/$fileName';
 
     // Guardar archivo
@@ -97,8 +66,6 @@ class PdfService {
 
   /// Solicitar permisos de almacenamiento (solo móvil)
   static Future<bool> _solicitarPermisos() async {
-    if (kIsWeb) return true; // Web no necesita permisos
-    
     // Android
     if (Platform.isAndroid) {
       final androidInfo = await _getAndroidVersion();

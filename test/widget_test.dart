@@ -1,9 +1,7 @@
-// This is a basic Flutter widget test.
+// Test básico de la aplicación SENA Actas
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Este test verifica que la aplicación se inicie correctamente
+// y muestre la pantalla de login.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,20 +9,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:actas_sena_mobile/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('App inicia y muestra pantalla de login', (WidgetTester tester) async {
+    // Construir la aplicación
+    await tester.pumpWidget(const ActasSenaApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Esperar a que se complete la animación inicial
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Verificar que la pantalla de login se muestra
+    expect(find.text('SENA Actas'), findsOneWidget);
+    expect(find.text('Iniciar Sesión'), findsWidgets);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verificar que existen los campos de usuario y contraseña
+    expect(find.byType(TextFormField), findsWidgets);
   });
 }

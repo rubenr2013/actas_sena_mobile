@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.actas_sena_mobile"
-    compileSdk = 34 // ← CAMBIADO de flutter.compileSdkVersion
+    compileSdk = 35 // ← CAMBIADO de flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
