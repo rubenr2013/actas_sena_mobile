@@ -53,7 +53,7 @@ dependencies:
   flutter_spinkit: ^5.2.0
   
   # Dates
-  intl: ^0.19.0
+  intl: ^0.20.0
 
   # Nuevas dependencias para PDF
   path_provider: ^2.1.1      # Para obtener rutas del dispositivo
