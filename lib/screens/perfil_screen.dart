@@ -9,6 +9,7 @@ import 'login_screen.dart';
 import 'editar_perfil_screen.dart';
 import 'cambiar_password_screen.dart';
 import 'backup_personal_screen.dart';
+import 'backup_general_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -22,6 +23,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
   bool _isLoading = true;
   String? _error;
   final ImagePicker _picker = ImagePicker();
+  bool _isAdmin = false;
 
   @override
   void initState() {
@@ -40,6 +42,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
       setState(() {
         _perfil = perfil;
+        _isAdmin = perfil.user.isStaff || perfil.user.isSuperuser;
         _isLoading = false;
       });
     } catch (e) {
@@ -743,6 +746,32 @@ class _PerfilScreenState extends State<PerfilScreen> {
             ),
           ),
           const SizedBox(height: 12),
+
+          // Backup General (Solo Administradores)
+          if (_isAdmin) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BackupGeneralScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.backup),
+                label: const Text('Backup del Sistema (Admin)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[700],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(

@@ -26,6 +26,8 @@ class UsuarioPerfil {
   final DateTime? ultimoLogin;
   final String? firmaDigital;
   final bool tieneFirma;
+  final bool isStaff;
+  final bool isSuperuser;
 
   UsuarioPerfil({
     required this.id,
@@ -38,6 +40,8 @@ class UsuarioPerfil {
     this.ultimoLogin,
     this.firmaDigital,
     required this.tieneFirma,
+    this.isStaff = false,
+    this.isSuperuser = false,
   });
 
   factory UsuarioPerfil.fromJson(Map<String, dynamic> json) {
@@ -49,11 +53,13 @@ class UsuarioPerfil {
       lastName: json['last_name'] ?? '',
       rol: json['rol'] ?? '',
       fechaRegistro: DateTime.parse(json['fecha_registro']),
-      ultimoLogin: json['ultimo_login'] != null 
-          ? DateTime.parse(json['ultimo_login']) 
+      ultimoLogin: json['ultimo_login'] != null
+          ? DateTime.parse(json['ultimo_login'])
           : null,
       firmaDigital: json['firma_digital'],
       tieneFirma: json['tiene_firma'],
+      isStaff: json['is_staff'] ?? false,
+      isSuperuser: json['is_superuser'] ?? false,
     );
   }
 
