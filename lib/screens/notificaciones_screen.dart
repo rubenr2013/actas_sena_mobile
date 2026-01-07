@@ -64,7 +64,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     try {
       await NotificacionesService.marcarComoLeida(notificacion.id);
       _cargarNotificaciones();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Notificación marcada como leída'),
@@ -86,7 +86,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     try {
       final count = await NotificacionesService.marcarTodasComoLeidas();
       _cargarNotificaciones();
-      
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -131,7 +131,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     try {
       await NotificacionesService.eliminarNotificacion(notificacion.id);
       _cargarNotificaciones();
-      
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -170,7 +170,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
         children: [
           // Filtros
           _buildFiltros(),
-          
+
           // Contador de no leídas
           if (_totalNoLeidas > 0)
             Container(
@@ -179,7 +179,8 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
               color: Colors.orange.shade50,
               child: Row(
                 children: [
-                  Icon(Icons.notifications_active, color: Colors.orange.shade700, size: 20),
+                  Icon(Icons.notifications_active,
+                      color: Colors.orange.shade700, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     '$_totalNoLeidas notificación${_totalNoLeidas > 1 ? 'es' : ''} sin leer',
@@ -191,7 +192,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                 ],
               ),
             ),
-          
+
           // Lista de notificaciones
           Expanded(
             child: _isLoading
@@ -248,7 +249,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Filtro por estado
           Row(
             children: [
@@ -355,7 +356,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Contenido
               Expanded(
                 child: Column(
@@ -368,8 +369,8 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                           child: Text(
                             notificacion.titulo,
                             style: TextStyle(
-                              fontWeight: notificacion.leida 
-                                  ? FontWeight.normal 
+                              fontWeight: notificacion.leida
+                                  ? FontWeight.normal
                                   : FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -387,7 +388,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    
+
                     // Mensaje
                     Text(
                       notificacion.mensaje,
@@ -399,7 +400,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Tipo y fecha
                     Row(
                       children: [
@@ -423,7 +424,8 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          timeago.format(notificacion.fechaCreacion, locale: 'es'),
+                          timeago.format(notificacion.fechaCreacion,
+                              locale: 'es'),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,

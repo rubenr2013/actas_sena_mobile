@@ -116,7 +116,8 @@ class _FirmasPendientesScreenState extends State<FirmasPendientesScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFF39A900),
                       borderRadius: BorderRadius.circular(20),
@@ -131,7 +132,8 @@ class _FirmasPendientesScreenState extends State<FirmasPendientesScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
@@ -231,7 +233,8 @@ class _FirmasPendientesScreenState extends State<FirmasPendientesScreen> {
                     final resultado = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => FirmarActaScreen(firmaPendiente: firma),
+                        builder: (context) =>
+                            FirmarActaScreen(firmaPendiente: firma),
                       ),
                     );
 

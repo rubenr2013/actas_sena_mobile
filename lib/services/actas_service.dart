@@ -26,7 +26,9 @@ class ActasService {
       // Construir la URL con codificación correcta
       String endpoint = '/actas/api/actas/';
       if (queryParams.isNotEmpty) {
-        final uri = Uri(queryParameters: queryParams.map((k, v) => MapEntry(k, v.toString())));
+        final uri = Uri(
+            queryParameters:
+                queryParams.map((k, v) => MapEntry(k, v.toString())));
         endpoint += uri.toString();
       }
 
@@ -84,7 +86,7 @@ class ActasService {
   static Future<List<Map<String, dynamic>>> getUsuarios() async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -121,7 +123,7 @@ class ActasService {
   }) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -164,7 +166,7 @@ class ActasService {
   static Future<Map<String, dynamic>> generarConIA(String prompt) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -180,12 +182,11 @@ class ActasService {
         return {
           'success': true,
           // ✅ CAMBIO: Ahora recibimos orden_dia y desarrollo por separado
-          'orden_dia': data['data']['orden_dia'],      // ← NUEVO
-          'desarrollo': data['data']['desarrollo'],    // ← NUEVO
+          'orden_dia': data['data']['orden_dia'], // ← NUEVO
+          'desarrollo': data['data']['desarrollo'], // ← NUEVO
           'modelo_usado': data['data']['modelo_usado'],
         };
-      }
-      else {
+      } else {
         final data = json.decode(response.body);
         throw Exception(data['error'] ?? 'Error al generar con IA');
       }
@@ -274,7 +275,8 @@ class ActasService {
   }
 
   /// Aplicar silencio administrativo a un acta
-  static Future<Map<String, dynamic>> aplicarSilencioAdministrativo(int actaId) async {
+  static Future<Map<String, dynamic>> aplicarSilencioAdministrativo(
+      int actaId) async {
     try {
       final token = await ApiService.getToken();
       if (token == null) {
@@ -292,12 +294,14 @@ class ActasService {
         return data;
       } else if (response.statusCode == 400 || response.statusCode == 404) {
         final data = json.decode(response.body);
-        throw Exception(data['error'] ?? 'No se puede aplicar silencio administrativo');
+        throw Exception(
+            data['error'] ?? 'No se puede aplicar silencio administrativo');
       } else if (response.statusCode == 401) {
         throw Exception('Sesión expirada');
       } else {
         final data = json.decode(response.body);
-        throw Exception(data['error'] ?? 'Error al aplicar silencio administrativo');
+        throw Exception(
+            data['error'] ?? 'Error al aplicar silencio administrativo');
       }
     } catch (e) {
       throw Exception('Error: $e');

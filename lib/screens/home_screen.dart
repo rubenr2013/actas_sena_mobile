@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/dashboard_service.dart';
+import '../services/api_service.dart';
 import '../models/usuario.dart';
 import '../models/dashboard.dart';
 import 'login_screen.dart';
@@ -11,7 +12,10 @@ import 'crear_acta_screen.dart';
 import 'firmas_pendientes_screen.dart';
 import 'mis_compromisos_screen.dart';
 import 'notificaciones_screen.dart';
+import 'acta_detalle_screen.dart';
+import 'firmar_acta_screen.dart';
 import '../services/notificaciones_service.dart';
+import '../services/firmas_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   String? _error;
   int _notificacionesNoLeidas = 0;
+  bool _canCreateActas = false;
 
   @override
   void initState() {
@@ -43,10 +48,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final usuario = await AuthService.getCurrentUser();
       final dashboard = await DashboardService.getDashboard();
+      final canCreate = await ApiService.canCreateActas();
 
       setState(() {
         _usuario = usuario;
         _dashboardData = dashboard;
+        _canCreateActas = canCreate;
         _isLoading = false;
       });
     } catch (e) {
@@ -123,8 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       minHeight: 16,
                     ),
                     child: Text(
-                      _notificacionesNoLeidas > 99 
-                          ? '99+' 
+                      _notificacionesNoLeidas > 99
+                          ? '99+'
                           : _notificacionesNoLeidas.toString(),
                       style: const TextStyle(
                         color: Colors.white,
@@ -234,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context)=> const PerfilScreen()),
+                MaterialPageRoute(builder: (context) => const PerfilScreen()),
               );
             },
           ),
@@ -244,22 +251,24 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context)=> const ActasListScreen())
-              );
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const ActasListScreen()));
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.add_circle),
-            title: const Text('Crear Acta'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context)=> const CrearActaScreen())
-              );
-            },
-          ),
+          // Solo mostrar "Crear Acta" para instructores y admins
+          if (_canCreateActas)
+            ListTile(
+              leading: const Icon(Icons.add_circle),
+              title: const Text('Crear Acta'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const CrearActaScreen()));
+              },
+            ),
           ListTile(
             leading: const Icon(Icons.edit),
             title: const Text('Firmar Actas'),
@@ -267,7 +276,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder:(context) => const FirmasPendientesScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const FirmasPendientesScreen()),
               );
             },
           ),
@@ -279,8 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:(context) => const MisCompromisosScreen()
-                  ),
+                    builder: (context) => const MisCompromisosScreen()),
               );
             },
           ),
@@ -303,8 +312,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         minHeight: 18,
                       ),
                       child: Text(
-                        _notificacionesNoLeidas > 99 
-                            ? '99+' 
+                        _notificacionesNoLeidas > 99
+                            ? '99+'
                             : _notificacionesNoLeidas.toString(),
                         style: const TextStyle(
                           color: Colors.white,
@@ -431,7 +440,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -495,7 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildActaCard(ActaReciente acta) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
     Color statusColor = Colors.grey;
-    
+
     switch (acta.estado) {
       case 'borrador':
         statusColor = Colors.orange;
@@ -534,7 +544,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: statusColor,
                     borderRadius: BorderRadius.circular(12),
@@ -559,7 +570,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // TODO: Navegar a detalle del acta
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ActaDetalleScreen(actaId: acta.id),
+            ),
+          );
         },
       ),
     );
@@ -615,8 +631,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         trailing: ElevatedButton(
-          onPressed: () {
-            // TODO: Navegar a firmar acta
+          onPressed: () async {
+            final resultado = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FirmarActaScreen(firmaPendiente: firma),
+              ),
+            );
+
+            // Si firmó, recargar dashboard
+            if (resultado == true && mounted) {
+              _loadData();
+            }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF39A900),
@@ -651,7 +677,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCompromisoCard(CompromisoProximo compromiso) {
     Color statusColor = Colors.cyan;
-    
+
     if (compromiso.estaVencido) {
       statusColor = Colors.red;
     } else if (compromiso.esProximo) {
@@ -718,7 +744,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // TODO: Navegar a detalle de compromiso
+          // Navegar a la pantalla de compromisos
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MisCompromisosScreen(),
+            ),
+          );
         },
       ),
     );
@@ -799,7 +831,8 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                const Icon(Icons.check_circle, size: 48, color: Color(0xFF39A900)),
+                const Icon(Icons.check_circle,
+                    size: 48, color: Color(0xFF39A900)),
                 const SizedBox(height: 12),
                 Text(
                   message,

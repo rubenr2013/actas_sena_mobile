@@ -6,7 +6,7 @@ class FirmasService {
   static Future<List<FirmaPendiente>> getActasPendientesFirma() async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -37,7 +37,7 @@ class FirmasService {
   }) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }

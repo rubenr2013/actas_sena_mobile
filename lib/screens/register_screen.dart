@@ -17,19 +17,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _telefonoController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String _selectedRol = 'aprendiz';
-
-  final List<Map<String, String>> _roles = [
-    {'value': 'aprendiz', 'label': 'Aprendiz'},
-    {'value': 'instructor', 'label': 'Instructor'},
-    {'value': 'funcionario', 'label': 'Funcionario'},
-    {'value': 'coordinador', 'label': 'Coordinador'},
-    {'value': 'director', 'label': 'Director'},
-  ];
+  String _rolDetectado = '';
+  Color _colorRol = Colors.grey;
+  IconData _iconoRol = Icons.person;
 
   @override
   void dispose() {
@@ -42,6 +36,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  // Detectar rol automáticamente según el dominio del correo
+  void _detectarRolPorEmail(String email) {
+    setState(() {
+      if (email.toLowerCase().endsWith('@soy.sena.edu.co')) {
+        _rolDetectado = 'Aprendiz SENA';
+        _colorRol = const Color(0xFF2196F3);
+        _iconoRol = Icons.school;
+      } else if (email.toLowerCase().endsWith('@sena.edu.co')) {
+        _rolDetectado = 'Instructor SENA';
+        _colorRol = const Color(0xFF39A900);
+        _iconoRol = Icons.person_outline;
+      } else if (email.isNotEmpty && email.contains('@')) {
+        _rolDetectado = 'Invitado';
+        _colorRol = const Color(0xFFFF9800);
+        _iconoRol = Icons.person;
+      } else {
+        _rolDetectado = '';
+        _colorRol = Colors.grey;
+        _iconoRol = Icons.person;
+      }
+    });
+  }
+
+  // Validar email
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Por favor ingrese su correo';
@@ -49,21 +67,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!value.contains('@')) {
       return 'Ingrese un correo válido';
     }
-
-    // Validar dominio según rol
-    if (_selectedRol == 'aprendiz') {
-      if (!value.endsWith('@soy.sena.edu.co') && !value.endsWith('@gmail.com')) {
-        return 'Aprendices deben usar @soy.sena.edu.co o @gmail.com';
-      }
-    } else if (_selectedRol == 'instructor' || 
-               _selectedRol == 'funcionario' || 
-               _selectedRol == 'coordinador' || 
-               _selectedRol == 'director') {
-      if (!value.endsWith('@sena.edu.co') && !value.endsWith('@gmail.com')) {
-        return 'Debe usar @sena.edu.co o @gmail.com';
-      }
-    }
-
     return null;
   }
 
@@ -90,7 +93,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim().toLowerCase(),
           password: _passwordController.text,
-          rol: _selectedRol,
           telefono: _telefonoController.text.trim(),
         );
 
@@ -104,7 +106,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           // Registro exitoso
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? '¡Cuenta creada correctamente!'),
+              content:
+                  Text(result['message'] ?? '¡Cuenta creada correctamente!'),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 3),
             ),
@@ -242,46 +245,64 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Rol
-                          DropdownButtonFormField<String>(
-                            value: _selectedRol,
-                            decoration: const InputDecoration(
-                              labelText: 'Rol',
-                              prefixIcon: Icon(Icons.work),
-                              border: OutlineInputBorder(),
-                            ),
-                            items: _roles.map((rol) {
-                              return DropdownMenuItem(
-                                value: rol['value'],
-                                child: Text(rol['label']!),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedRol = value!;
-                                // Limpiar email al cambiar rol para revalidar
-                                if (_emailController.text.isNotEmpty) {
-                                  _formKey.currentState?.validate();
-                                }
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Email
+                          // Email (primero, para detectar el rol)
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               labelText: 'Correo electrónico',
-                              hintText: _selectedRol == 'aprendiz' 
-                                  ? 'ejemplo@soy.sena.edu.co'
-                                  : 'ejemplo@sena.edu.co',
-                              prefixIcon: const Icon(Icons.email),
-                              border: const OutlineInputBorder(),
+                              hintText: 'ejemplo@soy.sena.edu.co',
+                              prefixIcon: Icon(Icons.email),
+                              border: OutlineInputBorder(),
                             ),
                             validator: _validateEmail,
+                            onChanged: (value) {
+                              _detectarRolPorEmail(value);
+                            },
                           ),
+
+                          // Mostrar rol detectado en tiempo real
+                          if (_rolDetectado.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: _colorRol.withOpacity(0.1),
+                                border: Border.all(color: _colorRol, width: 2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(_iconoRol, color: _colorRol, size: 28),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Tu cuenta será creada como:',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _rolDetectado,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: _colorRol,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
 
                           // Teléfono (opcional)
@@ -347,7 +368,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _obscureConfirmPassword = !_obscureConfirmPassword;
+                                    _obscureConfirmPassword =
+                                        !_obscureConfirmPassword;
                                   });
                                 },
                               ),

@@ -66,7 +66,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF39A900)),
+              leading:
+                  const Icon(Icons.photo_library, color: Color(0xFF39A900)),
               title: const Text('Seleccionar de galería'),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
@@ -102,7 +103,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('¿Deseas actualizar tu firma digital con esta imagen?'),
+              const Text(
+                  '¿Deseas actualizar tu firma digital con esta imagen?'),
               const SizedBox(height: 16),
               Container(
                 height: 100,
@@ -171,7 +173,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
         if (resultado['success'] == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(resultado['message'] ?? 'Firma actualizada correctamente'),
+              content: Text(
+                  resultado['message'] ?? 'Firma actualizada correctamente'),
               backgroundColor: Colors.green,
             ),
           );
@@ -524,7 +527,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -591,7 +595,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
               TextButton.icon(
                 onPressed: _cambiarFirma,
                 icon: Icon(
-                  _perfil!.user.tieneFirma ? Icons.edit : Icons.add_photo_alternate,
+                  _perfil!.user.tieneFirma
+                      ? Icons.edit
+                      : Icons.add_photo_alternate,
                   size: 20,
                 ),
                 label: Text(

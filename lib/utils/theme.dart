@@ -7,7 +7,7 @@ class AppTheme {
   static const Color senaBackground = Color(0xFFF5F5F5);
   static const Color senaWhite = Color(0xFFFFFFFF);
   static const Color senaError = Color(0xFFD32F2F);
-  
+
   static ThemeData get theme {
     return ThemeData(
       primaryColor: senaPrimary,

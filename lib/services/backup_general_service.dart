@@ -1,15 +1,14 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'api_service.dart';
+import '../utils/file_utils.dart';
 
 class BackupGeneralService {
   /// Listar todos los backups disponibles en el servidor
   static Future<Map<String, dynamic>> listarBackups() async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -49,7 +48,7 @@ class BackupGeneralService {
   static Future<Map<String, dynamic>> crearBackup() async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -85,34 +84,25 @@ class BackupGeneralService {
   static Future<Map<String, dynamic>> descargarBackup(String filename) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
 
       final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/actas/api/admin/backups/descargar/$filename/'),
+        Uri.parse(
+            '${ApiService.baseUrl}/actas/api/admin/backups/descargar/$filename/'),
         headers: {
           'Authorization': 'Bearer $token',
         },
       );
 
       if (response.statusCode == 200) {
-        // Obtener directorio de descargas
-        Directory? directory;
-        if (Platform.isAndroid) {
-          directory = Directory('/storage/emulated/0/Download');
-          if (!await directory.exists()) {
-            directory = await getExternalStorageDirectory();
-          }
-        } else {
-          directory = await getApplicationDocumentsDirectory();
-        }
-
-        // Guardar archivo
-        final filePath = '${directory!.path}/$filename';
-        final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
+        // Usar utilidad para guardar archivo
+        final filePath = await FileUtils.saveFile(
+          response.bodyBytes,
+          filename,
+        );
 
         return {
           'success': true,
@@ -139,7 +129,7 @@ class BackupGeneralService {
   ) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -178,13 +168,14 @@ class BackupGeneralService {
   static Future<Map<String, dynamic>> eliminarBackup(String filename) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
 
       final response = await http.delete(
-        Uri.parse('${ApiService.baseUrl}/actas/api/admin/backups/eliminar/$filename/'),
+        Uri.parse(
+            '${ApiService.baseUrl}/actas/api/admin/backups/eliminar/$filename/'),
         headers: {
           'Authorization': 'Bearer $token',
         },

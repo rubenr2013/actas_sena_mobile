@@ -13,7 +13,7 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
@@ -44,7 +44,8 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
         if (result['success']) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? 'Contraseña actualizada correctamente'),
+              content: Text(
+                  result['message'] ?? 'Contraseña actualizada correctamente'),
               backgroundColor: Colors.green,
             ),
           );
@@ -144,7 +145,9 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                 prefixIcon: const Icon(Icons.lock, color: Color(0xFF39A900)),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscureCurrentPassword ? Icons.visibility : Icons.visibility_off,
+                    _obscureCurrentPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                   ),
                   onPressed: () {
                     setState(() {
@@ -157,7 +160,8 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF39A900), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF39A900), width: 2),
                 ),
               ),
               validator: (value) {
@@ -176,10 +180,13 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
               obscureText: _obscureNewPassword,
               decoration: InputDecoration(
                 labelText: 'Nueva Contraseña',
-                prefixIcon: const Icon(Icons.lock_open, color: Color(0xFF39A900)),
+                prefixIcon:
+                    const Icon(Icons.lock_open, color: Color(0xFF39A900)),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscureNewPassword ? Icons.visibility : Icons.visibility_off,
+                    _obscureNewPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                   ),
                   onPressed: () {
                     setState(() {
@@ -192,7 +199,8 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF39A900), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF39A900), width: 2),
                 ),
               ),
               validator: (value) {
@@ -217,10 +225,13 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
               obscureText: _obscureConfirmPassword,
               decoration: InputDecoration(
                 labelText: 'Confirmar Nueva Contraseña',
-                prefixIcon: const Icon(Icons.lock_reset, color: Color(0xFF39A900)),
+                prefixIcon:
+                    const Icon(Icons.lock_reset, color: Color(0xFF39A900)),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                    _obscureConfirmPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                   ),
                   onPressed: () {
                     setState(() {
@@ -233,7 +244,8 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF39A900), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF39A900), width: 2),
                 ),
               ),
               validator: (value) {
@@ -275,7 +287,8 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
                     : const Text(

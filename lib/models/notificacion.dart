@@ -32,8 +32,8 @@ class Notificacion {
       enlace: json['enlace'] ?? '',
       leida: json['leida'],
       fechaCreacion: DateTime.parse(json['fecha_creacion']),
-      fechaLectura: json['fecha_lectura'] != null 
-          ? DateTime.parse(json['fecha_lectura']) 
+      fechaLectura: json['fecha_lectura'] != null
+          ? DateTime.parse(json['fecha_lectura'])
           : null,
       metadata: json['metadata'] ?? {},
     );

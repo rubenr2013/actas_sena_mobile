@@ -410,7 +410,8 @@ class _BackupGeneralScreenState extends State<BackupGeneralScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error, size: 64, color: Colors.red),
+                            const Icon(Icons.error,
+                                size: 64, color: Colors.red),
                             const SizedBox(height: 16),
                             Text(
                               _errorMessage!,
@@ -430,7 +431,8 @@ class _BackupGeneralScreenState extends State<BackupGeneralScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.folder_open, size: 64, color: Colors.grey[400]),
+                                Icon(Icons.folder_open,
+                                    size: 64, color: Colors.grey[400]),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No hay backups disponibles',
@@ -457,10 +459,12 @@ class _BackupGeneralScreenState extends State<BackupGeneralScreen> {
                                     ),
                                     title: Text(
                                       backup['filename'],
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
                                     ),
                                     subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text('Fecha: ${backup['created']}'),
                                         Text('Tamaño: ${backup['size']} MB'),
@@ -470,10 +474,12 @@ class _BackupGeneralScreenState extends State<BackupGeneralScreen> {
                                       Padding(
                                         padding: const EdgeInsets.all(16),
                                         child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
                                           children: [
                                             ElevatedButton.icon(
-                                              onPressed: () => _descargarBackup(backup['filename']),
+                                              onPressed: () => _descargarBackup(
+                                                  backup['filename']),
                                               icon: const Icon(Icons.download),
                                               label: const Text('Descargar'),
                                               style: ElevatedButton.styleFrom(
@@ -481,7 +487,8 @@ class _BackupGeneralScreenState extends State<BackupGeneralScreen> {
                                               ),
                                             ),
                                             ElevatedButton.icon(
-                                              onPressed: () => _restaurarBackup(backup['filename']),
+                                              onPressed: () => _restaurarBackup(
+                                                  backup['filename']),
                                               icon: const Icon(Icons.restore),
                                               label: const Text('Restaurar'),
                                               style: ElevatedButton.styleFrom(
@@ -489,7 +496,8 @@ class _BackupGeneralScreenState extends State<BackupGeneralScreen> {
                                               ),
                                             ),
                                             IconButton(
-                                              onPressed: () => _eliminarBackup(backup['filename']),
+                                              onPressed: () => _eliminarBackup(
+                                                  backup['filename']),
                                               icon: const Icon(Icons.delete),
                                               color: Colors.red,
                                               tooltip: 'Eliminar',

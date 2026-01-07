@@ -11,13 +11,15 @@ class ActualizarCompromisoScreen extends StatefulWidget {
   });
 
   @override
-  State<ActualizarCompromisoScreen> createState() => _ActualizarCompromisoScreenState();
+  State<ActualizarCompromisoScreen> createState() =>
+      _ActualizarCompromisoScreenState();
 }
 
-class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen> {
+class _ActualizarCompromisoScreenState
+    extends State<ActualizarCompromisoScreen> {
   final _formKey = GlobalKey<FormState>();
   final _reporteController = TextEditingController();
-  
+
   late String _estadoSeleccionado;
   late double _porcentajeAvance;
   bool _isLoading = false;
@@ -26,7 +28,8 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
   void initState() {
     super.initState();
     _estadoSeleccionado = widget.compromiso['estado'];
-    _porcentajeAvance = (widget.compromiso['porcentaje_avance'] as int).toDouble();
+    _porcentajeAvance =
+        (widget.compromiso['porcentaje_avance'] as int).toDouble();
     _reporteController.text = widget.compromiso['reporte_cumplimiento'] ?? '';
   }
 
@@ -58,13 +61,13 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Regresar con resultado exitoso
         Navigator.pop(context, true);
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -96,24 +99,24 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
             children: [
               // Información del compromiso
               _buildInfoCard(fechaLimite, diasRestantes),
-              
+
               const SizedBox(height: 24),
-              
+
               // Estado
               _buildEstadoSelector(),
-              
+
               const SizedBox(height: 24),
-              
+
               // Porcentaje de avance
               _buildPorcentajeSlider(),
-              
+
               const SizedBox(height: 24),
-              
+
               // Reporte de cumplimiento
               _buildReporteField(),
-              
+
               const SizedBox(height: 32),
-              
+
               // Botón guardar
               _buildGuardarButton(),
             ],
@@ -147,9 +150,9 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
                 ),
               ],
             ),
-            
+
             const Divider(height: 24),
-            
+
             // Acta
             Row(
               children: [
@@ -161,9 +164,9 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Fecha límite
             Row(
               children: [
@@ -182,17 +185,17 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Días restantes
             Row(
               children: [
                 Icon(
                   diasRestantes < 0 ? Icons.warning : Icons.access_time,
                   size: 16,
-                  color: diasRestantes < 0 
-                      ? Colors.red 
+                  color: diasRestantes < 0
+                      ? Colors.red
                       : diasRestantes <= 3
                           ? Colors.orange
                           : Colors.grey[600],
@@ -206,9 +209,11 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
                           : 'Faltan $diasRestantes días',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: diasRestantes <= 3 ? FontWeight.bold : FontWeight.normal,
-                    color: diasRestantes < 0 
-                        ? Colors.red 
+                    fontWeight: diasRestantes <= 3
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                    color: diasRestantes < 0
+                        ? Colors.red
                         : diasRestantes <= 3
                             ? Colors.orange
                             : Colors.grey[700],
@@ -279,7 +284,7 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
               onChanged: (value) {
                 setState(() {
                   _estadoSeleccionado = value!;
-                  
+
                   // Si marca como completado, poner avance en 100%
                   if (value == 'completado') {
                     _porcentajeAvance = 100;
@@ -355,7 +360,7 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
             onChanged: (value) {
               setState(() {
                 _porcentajeAvance = value;
-                
+
                 // Si llega a 100%, cambiar estado a completado
                 if (value == 100 && _estadoSeleccionado != 'completado') {
                   _estadoSeleccionado = 'completado';
@@ -368,18 +373,23 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
             },
           ),
         ),
-        
+
         // Marcas de referencia
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('0%', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              Text('25%', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              Text('50%', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              Text('75%', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              Text('100%', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              Text('0%',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              Text('25%',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              Text('50%',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              Text('75%',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              Text('100%',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
             ],
           ),
         ),
@@ -419,7 +429,8 @@ class _ActualizarCompromisoScreenState extends State<ActualizarCompromisoScreen>
             fillColor: Colors.grey[50],
           ),
           validator: (value) {
-            if (_estadoSeleccionado == 'completado' && (value == null || value.trim().isEmpty)) {
+            if (_estadoSeleccionado == 'completado' &&
+                (value == null || value.trim().isEmpty)) {
               return 'El reporte es obligatorio para marcar como completado';
             }
             return null;

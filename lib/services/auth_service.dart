@@ -13,24 +13,24 @@ class AuthService {
       final response = await ApiService.post(
         AppConstants.loginEndpoint,
         {
-          'username': email,  // Django usa 'username' aunque sea email
+          'username': email, // Django usa 'username' aunque sea email
           'password': password,
         },
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        
+
         // Guardar token
         if (data['token'] != null) {
           await ApiService.saveToken(data['token'] as String);
         }
-        
+
         // Guardar datos de usuario
         if (data['user'] != null) {
           await ApiService.saveUserData(data['user'] as Map<String, dynamic>);
         }
-        
+
         return {
           'success': true,
           'token': data['token'],
@@ -62,7 +62,6 @@ class AuthService {
     required String lastName,
     required String email,
     required String password,
-    required String rol,
     String? telefono,
   }) async {
     try {
@@ -73,8 +72,8 @@ class AuthService {
           'last_name': lastName,
           'email': email,
           'password': password,
-          'rol': rol,
           'telefono': telefono ?? '',
+          // El backend detecta automáticamente el rol por el email
         },
       );
 
@@ -100,7 +99,8 @@ class AuthService {
   }
 
   // Solicitar código de recuperación
-  static Future<Map<String, dynamic>> solicitarCodigoRecuperacion(String email) async {
+  static Future<Map<String, dynamic>> solicitarCodigoRecuperacion(
+      String email) async {
     try {
       final response = await ApiService.post(
         '/actas/api/auth/solicitar-codigo/',
@@ -228,7 +228,7 @@ class AuthService {
   }) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         return {
           'success': false,
@@ -256,6 +256,73 @@ class AuthService {
         return {
           'success': false,
           'error': data['error'] ?? 'Error al cambiar contraseña',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  // Verificar email con código de 6 dígitos
+  static Future<Map<String, dynamic>> verificarEmail({
+    required String email,
+    required String codigo,
+  }) async {
+    try {
+      final response = await ApiService.post(
+        '/actas/api/auth/verificar-email/',
+        {
+          'email': email,
+          'codigo': codigo,
+        },
+      );
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Email verificado correctamente',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Código incorrecto o expirado',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  // Reenviar código de verificación de email
+  static Future<Map<String, dynamic>> reenviarCodigoVerificacion(
+      String email) async {
+    try {
+      final response = await ApiService.post(
+        '/actas/api/auth/reenviar-codigo/',
+        {
+          'email': email,
+        },
+      );
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Código reenviado al correo',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Error al reenviar código',
         };
       }
     } catch (e) {

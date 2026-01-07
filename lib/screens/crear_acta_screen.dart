@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/actas_service.dart';
 import 'acta_detalle_screen.dart';
 import '../services/compromisos_service.dart';
+import '../services/adjuntos_service.dart';
 
 class CrearActaScreen extends StatefulWidget {
   const CrearActaScreen({super.key});
@@ -15,7 +17,7 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
   final _formKey = GlobalKey<FormState>();
   int _currentStep = 0;
   bool _isLoading = false;
-  
+
   // Controllers
   final _tituloController = TextEditingController();
   final _lugarController = TextEditingController();
@@ -23,18 +25,22 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
   final _desarrolloController = TextEditingController();
   final _observacionesController = TextEditingController();
   final _promptIAController = TextEditingController();
-  
+
   // Datos del formulario
   DateTime _fechaReunion = DateTime.now();
   String _tipoReunion = 'consejo_academico';
   String _modalidad = 'presencial';
   bool _usarIA = false;
-  
+
   // Participantes
   List<Map<String, dynamic>> _todosUsuarios = [];
   List<Map<String, dynamic>> _participantesSeleccionados = [];
   List<Map<String, dynamic>> _compromisosTemp = [];
   bool _cargandoUsuarios = false;
+
+  // Archivos adjuntos
+  List<File> _archivosSeleccionados = [];
+  List<String> _descripcionesAdjuntos = [];
 
   @override
   void initState() {
@@ -74,7 +80,8 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
   Future<void> _generarConIA() async {
     if (_promptIAController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Escribe una descripción para generar con IA')),
+        const SnackBar(
+            content: Text('Escribe una descripción para generar con IA')),
       );
       return;
     }
@@ -82,16 +89,17 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final resultado = await ActasService.generarConIA(_promptIAController.text);
-      
+      final resultado =
+          await ActasService.generarConIA(_promptIAController.text);
+
       if (resultado['success']) {
         setState(() {
           // ✅ CAMBIO: Ahora asignamos los campos separados correctamente
-          _ordenDiaController.text = resultado['orden_dia'];      // ← AGENDA
-          _desarrolloController.text = resultado['desarrollo'];   // ← DESARROLLO
+          _ordenDiaController.text = resultado['orden_dia']; // ← AGENDA
+          _desarrolloController.text = resultado['desarrollo']; // ← DESARROLLO
           _isLoading = false;
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -114,89 +122,136 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
     }
   }
 
-  Future<void> _crearActa() async {
-  if (!_formKey.currentState!.validate()) {
-    return;
-  }
-
-  if (_participantesSeleccionados.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Debes agregar al menos un participante')),
-    );
-    return;
-  }
-
-  setState(() => _isLoading = true);
-
-  try {
-    // PASO 1: Crear el acta
-    final resultado = await ActasService.crearActa(
-      titulo: _tituloController.text,
-      fechaReunion: _fechaReunion.toIso8601String(),
-      lugarReunion: _lugarController.text,
-      tipoReunion: _tipoReunion,
-      modalidad: _modalidad,
-      ordenDia: _ordenDiaController.text,
-      desarrollo: _desarrolloController.text,
-      observaciones: _observacionesController.text,
-      participantes: _participantesSeleccionados,
-      generadaConIa: _usarIA,
-      promptOriginal: _usarIA ? _promptIAController.text : '',
-      modeloIaUsado: _usarIA ? 'llama-3.3-70b-versatile' : '',
-    );
-
-    if (resultado['success']) {
-      final actaId = resultado['acta_id'];
-      
-      // PASO 2: Guardar compromisos si existen
-      if (_compromisosTemp.isNotEmpty) {
-        for (var compromiso in _compromisosTemp) {
-          try {
-            await CompromisosService.crearCompromiso(
-              actaId: actaId,
-              descripcion: compromiso['descripcion'],
-              responsableId: compromiso['responsable_id'],
-              fechaLimite: compromiso['fecha_limite'],
-              observaciones: compromiso['observaciones'],
-            );
-          } catch (e) {
-            print('Error al guardar compromiso: $e');
-            // Continuar con los demás aunque uno falle
-          }
-        }
+  Future<void> _seleccionarArchivo() async {
+    try {
+      final archivo = await AdjuntosService.seleccionarArchivo();
+      if (archivo != null) {
+        setState(() {
+          _archivosSeleccionados.add(archivo);
+          _descripcionesAdjuntos.add(''); // Descripción vacía por defecto
+        });
       }
-
-      setState(() => _isLoading = false);
-
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Acta ${resultado['numero_acta']} creada correctamente'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Navegar al detalle de la acta creada
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ActaDetalleScreen(actaId: actaId),
+            content: Text('Error al seleccionar archivo: $e'),
+            backgroundColor: Colors.red,
           ),
         );
       }
     }
-  } catch (e) {
-    setState(() => _isLoading = false);
-    if (mounted) {
+  }
+
+  void _eliminarArchivo(int index) {
+    setState(() {
+      _archivosSeleccionados.removeAt(index);
+      _descripcionesAdjuntos.removeAt(index);
+    });
+  }
+
+  Future<void> _crearActa() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_participantesSeleccionados.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Debes agregar al menos un participante')),
       );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // PASO 1: Crear el acta
+      final resultado = await ActasService.crearActa(
+        titulo: _tituloController.text,
+        fechaReunion: _fechaReunion.toIso8601String(),
+        lugarReunion: _lugarController.text,
+        tipoReunion: _tipoReunion,
+        modalidad: _modalidad,
+        ordenDia: _ordenDiaController.text,
+        desarrollo: _desarrolloController.text,
+        observaciones: _observacionesController.text,
+        participantes: _participantesSeleccionados,
+        generadaConIa: _usarIA,
+        promptOriginal: _usarIA ? _promptIAController.text : '',
+        modeloIaUsado: _usarIA ? 'llama-3.3-70b-versatile' : '',
+      );
+
+      if (resultado['success']) {
+        final actaId = resultado['acta_id'];
+
+        // PASO 2: Guardar compromisos si existen
+        if (_compromisosTemp.isNotEmpty) {
+          for (var compromiso in _compromisosTemp) {
+            try {
+              await CompromisosService.crearCompromiso(
+                actaId: actaId,
+                descripcion: compromiso['descripcion'],
+                responsableId: compromiso['responsable_id'],
+                fechaLimite: compromiso['fecha_limite'],
+                observaciones: compromiso['observaciones'],
+              );
+            } catch (e) {
+              print('Error al guardar compromiso: $e');
+              // Continuar con los demás aunque uno falle
+            }
+          }
+        }
+
+        // PASO 3: Subir archivos adjuntos si existen
+        if (_archivosSeleccionados.isNotEmpty) {
+          for (int i = 0; i < _archivosSeleccionados.length; i++) {
+            try {
+              await AdjuntosService.subirArchivo(
+                actaId: actaId,
+                archivo: _archivosSeleccionados[i],
+                descripcion: _descripcionesAdjuntos[i].isNotEmpty
+                    ? _descripcionesAdjuntos[i]
+                    : null,
+              );
+            } catch (e) {
+              print('Error al subir archivo: $e');
+              // Continuar con los demás aunque uno falle
+            }
+          }
+        }
+
+        setState(() => _isLoading = false);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('Acta ${resultado['numero_acta']} creada correctamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navegar al detalle de la acta creada
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ActaDetalleScreen(actaId: actaId),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +269,7 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
         child: Stepper(
           currentStep: _currentStep,
           onStepContinue: () {
-            if (_currentStep < 4) {
+            if (_currentStep < 5) {
               setState(() => _currentStep++);
             } else {
               _crearActa();
@@ -242,10 +297,11 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Text(_currentStep == 4 ? 'Crear Acta' : 'Continuar'),
+                        : Text(_currentStep == 5 ? 'Crear Acta' : 'Continuar'),
                   ),
                   const SizedBox(width: 12),
                   if (_currentStep > 0)
@@ -277,11 +333,16 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
               title: const Text('Compromisos'),
               content: _buildStepCompromisos(),
               isActive: _currentStep >= 3,
-              ),
+            ),
+            Step(
+              title: const Text('Archivos Adjuntos'),
+              content: _buildStepAdjuntos(),
+              isActive: _currentStep >= 4,
+            ),
             Step(
               title: const Text('Revisión'),
               content: _buildStepRevision(),
-              isActive: _currentStep >= 3,
+              isActive: _currentStep >= 5,
             ),
           ],
         ),
@@ -307,7 +368,6 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
         ListTile(
           title: const Text('Fecha de Reunión'),
           subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(_fechaReunion)),
@@ -319,13 +379,13 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
               firstDate: DateTime(2020),
               lastDate: DateTime(2030),
             );
-            
+
             if (fecha != null && mounted) {
               final hora = await showTimePicker(
                 context: context,
                 initialTime: TimeOfDay.fromDateTime(_fechaReunion),
               );
-              
+
               if (hora != null) {
                 setState(() {
                   _fechaReunion = DateTime(
@@ -341,7 +401,6 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
         TextFormField(
           controller: _lugarController,
           decoration: InputDecoration(
@@ -357,7 +416,6 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
         DropdownButtonFormField<String>(
           value: _tipoReunion,
           decoration: InputDecoration(
@@ -366,10 +424,15 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
           items: const [
-            DropdownMenuItem(value: 'consejo_academico', child: Text('Consejo Académico')),
-            DropdownMenuItem(value: 'comite_evaluacion', child: Text('Comité de Evaluación')),
-            DropdownMenuItem(value: 'coordinacion', child: Text('Coordinación')),
-            DropdownMenuItem(value: 'administrativa', child: Text('Administrativa')),
+            DropdownMenuItem(
+                value: 'consejo_academico', child: Text('Consejo Académico')),
+            DropdownMenuItem(
+                value: 'comite_evaluacion',
+                child: Text('Comité de Evaluación')),
+            DropdownMenuItem(
+                value: 'coordinacion', child: Text('Coordinación')),
+            DropdownMenuItem(
+                value: 'administrativa', child: Text('Administrativa')),
             DropdownMenuItem(value: 'tecnica', child: Text('Técnica')),
             DropdownMenuItem(value: 'otra', child: Text('Otra')),
           ],
@@ -380,7 +443,6 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
         DropdownButtonFormField<String>(
           value: _modalidad,
           decoration: InputDecoration(
@@ -418,7 +480,6 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        
         if (_participantesSeleccionados.isNotEmpty) ...[
           ..._participantesSeleccionados.map((p) {
             return Card(
@@ -444,7 +505,6 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           }).toList(),
           const SizedBox(height: 16),
         ],
-        
         ElevatedButton.icon(
           onPressed: () => _mostrarDialogoAgregarParticipante(),
           icon: const Icon(Icons.add),
@@ -481,7 +541,7 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                       final yaSeleccionado = _participantesSeleccionados.any(
                         (p) => p['usuario_id'] == usuario['id'],
                       );
-                      
+
                       return DropdownMenuItem(
                         value: usuario,
                         enabled: !yaSeleccionado,
@@ -521,7 +581,8 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                       setState(() {
                         _participantesSeleccionados.add({
                           'usuario_id': usuarioSeleccionado!['id'],
-                          'nombre_completo': usuarioSeleccionado!['nombre_completo'],
+                          'nombre_completo':
+                              usuarioSeleccionado!['nombre_completo'],
                           'rol_en_reunion': rolController.text,
                           'obligatorio_firma': true,
                         });
@@ -549,14 +610,14 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
       children: [
         SwitchListTile(
           title: const Text('Generar con IA'),
-          subtitle: const Text('Usa inteligencia artificial para generar el contenido'),
+          subtitle: const Text(
+              'Usa inteligencia artificial para generar el contenido'),
           value: _usarIA,
           activeColor: const Color(0xFF39A900),
           onChanged: (value) {
             setState(() => _usarIA = value);
           },
         ),
-        
         if (_usarIA) ...[
           const SizedBox(height: 16),
           Container(
@@ -585,8 +646,10 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
             maxLines: 4,
             decoration: InputDecoration(
               labelText: 'Descripción para IA',
-              hintText: 'Ej: Reunión sobre planificación del segundo semestre...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              hintText:
+                  'Ej: Reunión sobre planificación del segundo semestre...',
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: 12),
@@ -601,7 +664,6 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           ),
           const SizedBox(height: 16),
         ],
-        
         TextFormField(
           controller: _ordenDiaController,
           maxLines: 5,
@@ -611,7 +673,6 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
         TextFormField(
           controller: _desarrolloController,
           maxLines: 8,
@@ -621,7 +682,6 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
         TextFormField(
           controller: _observacionesController,
           maxLines: 3,
@@ -630,6 +690,108 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildStepAdjuntos() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Archivos Adjuntos (Opcional)',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Puedes adjuntar documentos, imágenes u otros archivos relevantes al acta.',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+        const SizedBox(height: 16),
+
+        // Botón para seleccionar archivo
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _seleccionarArchivo,
+            icon: const Icon(Icons.attach_file),
+            label: const Text('Seleccionar Archivo'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF39A900),
+              side: const BorderSide(color: Color(0xFF39A900)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Lista de archivos seleccionados
+        if (_archivosSeleccionados.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text(
+                'No has seleccionado archivos',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          ..._archivosSeleccionados.asMap().entries.map((entry) {
+            final index = entry.key;
+            final archivo = entry.value;
+            final nombreArchivo =
+                archivo.path.split('/').last.split('\\').last;
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.insert_drive_file,
+                            color: Color(0xFF39A900)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            nombreArchivo,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete,
+                              color: Colors.red, size: 20),
+                          onPressed: () => _eliminarArchivo(index),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Descripción (opcional)',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      maxLines: 2,
+                      onChanged: (value) {
+                        _descripcionesAdjuntos[index] = value;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
       ],
     );
   }
@@ -643,15 +805,18 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const Divider(height: 24),
-        
         _buildRevisionItem('Título', _tituloController.text),
-        _buildRevisionItem('Fecha', DateFormat('dd/MM/yyyy HH:mm').format(_fechaReunion)),
+        _buildRevisionItem(
+            'Fecha', DateFormat('dd/MM/yyyy HH:mm').format(_fechaReunion)),
         _buildRevisionItem('Lugar', _lugarController.text),
         _buildRevisionItem('Tipo', _getTipoReunionText(_tipoReunion)),
         _buildRevisionItem('Modalidad', _getModalidadText(_modalidad)),
-        _buildRevisionItem('Participantes', '${_participantesSeleccionados.length} persona(s)'),
-        _buildRevisionItem('Compromisos', '${_compromisosTemp.length} compromiso(s)'),
-        
+        _buildRevisionItem('Participantes',
+            '${_participantesSeleccionados.length} persona(s)'),
+        _buildRevisionItem(
+            'Compromisos', '${_compromisosTemp.length} compromiso(s)'),
+        _buildRevisionItem(
+            'Archivos Adjuntos', '${_archivosSeleccionados.length} archivo(s)'),
         if (_usarIA)
           Container(
             margin: const EdgeInsets.only(top: 12),
@@ -695,22 +860,33 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
 
   String _getTipoReunionText(String tipo) {
     switch (tipo) {
-      case 'consejo_academico': return 'Consejo Académico';
-      case 'comite_evaluacion': return 'Comité de Evaluación';
-      case 'coordinacion': return 'Coordinación';
-      case 'administrativa': return 'Administrativa';
-      case 'tecnica': return 'Técnica';
-      case 'otra': return 'Otra';
-      default: return tipo;
+      case 'consejo_academico':
+        return 'Consejo Académico';
+      case 'comite_evaluacion':
+        return 'Comité de Evaluación';
+      case 'coordinacion':
+        return 'Coordinación';
+      case 'administrativa':
+        return 'Administrativa';
+      case 'tecnica':
+        return 'Técnica';
+      case 'otra':
+        return 'Otra';
+      default:
+        return tipo;
     }
   }
 
   String _getModalidadText(String modalidad) {
     switch (modalidad) {
-      case 'presencial': return 'Presencial';
-      case 'virtual': return 'Virtual';
-      case 'hibrida': return 'Híbrida';
-      default: return modalidad;
+      case 'presencial':
+        return 'Presencial';
+      case 'virtual':
+        return 'Virtual';
+      case 'hibrida':
+        return 'Híbrida';
+      default:
+        return modalidad;
     }
   }
 
@@ -814,7 +990,8 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 14, color: Color(0xFF39A900)),
+                const Icon(Icons.calendar_today,
+                    size: 14, color: Color(0xFF39A900)),
                 const SizedBox(width: 4),
                 Text(
                   'Vence: ${dateFormat.format(DateTime.parse(compromiso['fecha_limite']))}',
@@ -826,11 +1003,15 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                 ),
               ],
             ),
-            if (compromiso['observaciones'] != null && compromiso['observaciones'].isNotEmpty) ...[
+            if (compromiso['observaciones'] != null &&
+                compromiso['observaciones'].isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
                 compromiso['observaciones'],
-                style: const TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
+                style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic),
               ),
             ],
           ],
@@ -870,7 +1051,8 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                     // Descripción
                     const Text(
                       'Descripción *',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -886,7 +1068,8 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                     // Responsable
                     const Text(
                       'Responsable *',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<Map<String, dynamic>>(
@@ -912,16 +1095,19 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                     // Fecha límite
                     const Text(
                       'Fecha Límite *',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     InkWell(
                       onTap: () async {
                         final fecha = await showDatePicker(
                           context: context,
-                          initialDate: DateTime.now().add(const Duration(days: 7)),
+                          initialDate:
+                              DateTime.now().add(const Duration(days: 7)),
                           firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365)),
                         );
                         if (fecha != null) {
                           setStateDialog(() {
@@ -937,14 +1123,18 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, color: Color(0xFF39A900)),
+                            const Icon(Icons.calendar_today,
+                                color: Color(0xFF39A900)),
                             const SizedBox(width: 12),
                             Text(
                               fechaSeleccionada != null
-                                  ? DateFormat('dd/MM/yyyy').format(fechaSeleccionada!)
+                                  ? DateFormat('dd/MM/yyyy')
+                                      .format(fechaSeleccionada!)
                                   : 'Selecciona una fecha',
                               style: TextStyle(
-                                color: fechaSeleccionada != null ? Colors.black : Colors.grey,
+                                color: fechaSeleccionada != null
+                                    ? Colors.black
+                                    : Colors.grey,
                               ),
                             ),
                           ],
@@ -956,7 +1146,8 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                     // Observaciones
                     const Text(
                       'Observaciones (opcional)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -1012,9 +1203,12 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                     setState(() {
                       _compromisosTemp.add({
                         'descripcion': descripcionController.text.trim(),
-                        'responsable_id': responsableSeleccionado!['usuario_id'],
-                        'responsable_nombre': responsableSeleccionado!['nombre_completo'],
-                        'fecha_limite': DateFormat('yyyy-MM-dd').format(fechaSeleccionada!),
+                        'responsable_id':
+                            responsableSeleccionado!['usuario_id'],
+                        'responsable_nombre':
+                            responsableSeleccionado!['nombre_completo'],
+                        'fecha_limite':
+                            DateFormat('yyyy-MM-dd').format(fechaSeleccionada!),
                         'observaciones': observacionesController.text.trim(),
                       });
                     });

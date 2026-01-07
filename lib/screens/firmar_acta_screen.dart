@@ -63,7 +63,8 @@ class _FirmarActaScreenState extends State<FirmarActaScreen> {
       }
 
       // Convertir a base64
-      final String base64Image = 'data:image/png;base64,${base64Encode(signature)}';
+      final String base64Image =
+          'data:image/png;base64,${base64Encode(signature)}';
 
       // Enviar al servidor
       final resultado = await FirmasService.firmarActa(
@@ -76,13 +77,15 @@ class _FirmarActaScreenState extends State<FirmarActaScreen> {
           // Mostrar mensaje de éxito
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(resultado['message'] ?? 'Firma guardada correctamente'),
+              content:
+                  Text(resultado['message'] ?? 'Firma guardada correctamente'),
               backgroundColor: Colors.green,
             ),
           );
 
           // Volver a la pantalla anterior
-          Navigator.pop(context, true); // true indica que se firmó correctamente
+          Navigator.pop(
+              context, true); // true indica que se firmó correctamente
         }
       }
     } catch (e) {
@@ -266,14 +269,18 @@ class _FirmarActaScreenState extends State<FirmarActaScreen> {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      Text(acta.ordenDia.isNotEmpty ? acta.ordenDia : 'No especificado'),
+                      Text(acta.ordenDia.isNotEmpty
+                          ? acta.ordenDia
+                          : 'No especificado'),
                       const SizedBox(height: 16),
                       const Text(
                         'Desarrollo:',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      Text(acta.desarrollo.isNotEmpty ? acta.desarrollo : 'No especificado'),
+                      Text(acta.desarrollo.isNotEmpty
+                          ? acta.desarrollo
+                          : 'No especificado'),
                       if (acta.observaciones.isNotEmpty) ...[
                         const SizedBox(height: 16),
                         const Text(
@@ -345,9 +352,11 @@ class _FirmarActaScreenState extends State<FirmarActaScreen> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _isLoading ? null : () {
-                    setState(() => _showPreview = false);
-                  },
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          setState(() => _showPreview = false);
+                        },
                   icon: const Icon(Icons.arrow_back),
                   label: const Text('Editar'),
                   style: OutlinedButton.styleFrom(
@@ -367,7 +376,8 @@ class _FirmarActaScreenState extends State<FirmarActaScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Icon(Icons.send),

@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'api_service.dart';
+import '../utils/file_utils.dart';
 
 class PdfService {
   /// Descargar PDF del acta
@@ -16,7 +16,7 @@ class PdfService {
 
       // Hacer petición al servidor
       final url = '${ApiService.baseUrl}/actas/api/actas/$actaId/pdf/';
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -42,24 +42,21 @@ class PdfService {
   }
 
   /// Descargar PDF en Flutter Móvil (Android/iOS)
-  static Future<String> _descargarPdfMovil(List<int> pdfBytes, int actaId) async {
+  static Future<String> _descargarPdfMovil(
+      List<int> pdfBytes, int actaId) async {
     // Solicitar permisos de almacenamiento
     final permisoOtorgado = await _solicitarPermisos();
     if (!permisoOtorgado) {
-      throw Exception('Se necesitan permisos de almacenamiento para descargar el PDF');
+      throw Exception(
+          'Se necesitan permisos de almacenamiento para descargar el PDF');
     }
 
-    // Obtener directorio de descargas
-    final directory = await _getDownloadDirectory();
-    
-    // Crear nombre del archivo
+    // Crear nombre del archivo con timestamp
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final fileName = 'ACTA_${actaId}_$timestamp.pdf';
-    final filePath = '${directory.path}/$fileName';
 
-    // Guardar archivo
-    final file = File(filePath);
-    await file.writeAsBytes(pdfBytes);
+    // Usar utilidad para guardar archivo
+    final filePath = await FileUtils.saveFile(pdfBytes, fileName);
 
     return filePath;
   }
@@ -72,17 +69,17 @@ class PdfService {
       if (androidInfo >= 33) {
         return true; // Android 13+ no requiere permisos para Downloads
       }
-      
+
       // Android 12 y anteriores
       final status = await Permission.storage.status;
       if (status.isGranted) {
         return true;
       }
-      
+
       final result = await Permission.storage.request();
       return result.isGranted;
     }
-    
+
     return true; // iOS maneja permisos automáticamente
   }
 
@@ -92,16 +89,5 @@ class PdfService {
       return 33; // Por defecto asumimos Android 13+
     }
     return 0;
-  }
-
-  /// Obtener directorio de descargas (solo móvil)
-  static Future<Directory> _getDownloadDirectory() async {
-    if (Platform.isAndroid) {
-      // Android: usar Downloads
-      return Directory('/storage/emulated/0/Download');
-    } else {
-      // iOS: usar directorio de documentos
-      return await getApplicationDocumentsDirectory();
-    }
   }
 }

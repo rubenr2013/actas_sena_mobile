@@ -10,7 +10,7 @@ class PerfilService {
   static Future<Perfil> getPerfil() async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -40,7 +40,7 @@ class PerfilService {
   }) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -71,7 +71,7 @@ class PerfilService {
   static Future<Map<String, dynamic>> actualizarFirma(File imagenFirma) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         return {
           'success': false,
@@ -80,12 +80,13 @@ class PerfilService {
       }
 
       // Crear request multipart
-      final uri = Uri.parse('${AppConstants.baseUrl}/actas/api/perfil/actualizar-firma/');
+      final uri = Uri.parse(
+          '${AppConstants.baseUrl}/actas/api/perfil/actualizar-firma/');
       final request = http.MultipartRequest('POST', uri);
-      
+
       // Agregar headers
       request.headers['Authorization'] = 'Bearer $token';
-      
+
       // Determinar el tipo MIME de la imagen
       String mimeType = 'image/jpeg';
       final extension = imagenFirma.path.toLowerCase().split('.').last;
@@ -94,11 +95,11 @@ class PerfilService {
       } else if (extension == 'jpg' || extension == 'jpeg') {
         mimeType = 'image/jpeg';
       }
-      
+
       // Agregar archivo
       final stream = http.ByteStream(imagenFirma.openRead());
       final length = await imagenFirma.length();
-      
+
       final multipartFile = http.MultipartFile(
         'firma_digital',
         stream,
@@ -106,15 +107,15 @@ class PerfilService {
         filename: 'firma_${DateTime.now().millisecondsSinceEpoch}.$extension',
         contentType: MediaType.parse(mimeType),
       );
-      
+
       request.files.add(multipartFile);
-      
+
       // Enviar request
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-      
+
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 200) {
         // Actualizar datos locales del usuario con la nueva firma
         final userData = await ApiService.getUserData();
@@ -123,7 +124,7 @@ class PerfilService {
           userData['tiene_firma'] = true;
           await ApiService.saveUserData(userData);
         }
-        
+
         return {
           'success': true,
           'message': data['message'] ?? 'Firma actualizada correctamente',

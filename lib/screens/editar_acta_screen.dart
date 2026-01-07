@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/actas_service.dart';
 import '../models/acta.dart';
+import '../services/adjuntos_service.dart';
+import '../models/archivo_adjunto.dart';
 
 class EditarActaScreen extends StatefulWidget {
   final ActaDetalle acta;
@@ -16,29 +19,36 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
   final _formKey = GlobalKey<FormState>();
   int _currentStep = 0;
   bool _isLoading = false;
-  
+
   // Controllers
   late TextEditingController _tituloController;
   late TextEditingController _lugarController;
   late TextEditingController _ordenDiaController;
   late TextEditingController _desarrolloController;
   late TextEditingController _observacionesController;
-  
+
   // Datos del formulario
   late DateTime _fechaReunion;
   late String _tipoReunion;
   late String _modalidad;
-  
+
   // Participantes
   List<Map<String, dynamic>> _todosUsuarios = [];
   List<Map<String, dynamic>> _participantesSeleccionados = [];
   bool _cargandoUsuarios = false;
+
+  // Archivos adjuntos
+  List<ArchivoAdjunto> _adjuntosExistentes = [];
+  List<File> _archivosNuevos = [];
+  List<String> _descripcionesNuevos = [];
+  bool _cargandoAdjuntos = false;
 
   @override
   void initState() {
     super.initState();
     _inicializarDatos();
     _cargarUsuarios();
+    _cargarAdjuntos();
   }
 
   void _inicializarDatos() {
@@ -47,12 +57,13 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
     _lugarController = TextEditingController(text: widget.acta.lugarReunion);
     _ordenDiaController = TextEditingController(text: widget.acta.ordenDia);
     _desarrolloController = TextEditingController(text: widget.acta.desarrollo);
-    _observacionesController = TextEditingController(text: widget.acta.observaciones ?? '');
-    
+    _observacionesController =
+        TextEditingController(text: widget.acta.observaciones ?? '');
+
     _fechaReunion = widget.acta.fechaReunion;
     _tipoReunion = widget.acta.tipoReunion;
     _modalidad = widget.acta.modalidad;
-    
+
     // Cargar participantes actuales
     _participantesSeleccionados = widget.acta.participantes.map((p) {
       return {
@@ -92,6 +103,108 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
     }
   }
 
+  Future<void> _cargarAdjuntos() async {
+    setState(() => _cargandoAdjuntos = true);
+    try {
+      final adjuntos = await AdjuntosService.listarAdjuntos(widget.acta.id);
+      setState(() {
+        _adjuntosExistentes = adjuntos;
+        _cargandoAdjuntos = false;
+      });
+    } catch (e) {
+      setState(() => _cargandoAdjuntos = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar adjuntos: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _seleccionarArchivo() async {
+    try {
+      final archivo = await AdjuntosService.seleccionarArchivo();
+      if (archivo != null) {
+        setState(() {
+          _archivosNuevos.add(archivo);
+          _descripcionesNuevos.add('');
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al seleccionar archivo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _eliminarArchivoNuevo(int index) {
+    setState(() {
+      _archivosNuevos.removeAt(index);
+      _descripcionesNuevos.removeAt(index);
+    });
+  }
+
+  Future<void> _eliminarAdjuntoExistente(ArchivoAdjunto adjunto) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar eliminación'),
+        content: Text('¿Deseas eliminar el archivo "${adjunto.nombreOriginal}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true) {
+      try {
+        final resultado = await AdjuntosService.eliminarAdjunto(
+          actaId: widget.acta.id,
+          adjuntoId: adjunto.id,
+        );
+
+        if (resultado['success']) {
+          setState(() {
+            _adjuntosExistentes.remove(adjunto);
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Archivo eliminado correctamente'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          throw Exception(resultado['error']);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al eliminar archivo: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _guardarCambios() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -107,6 +220,7 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // PASO 1: Guardar cambios del acta
       final resultado = await ActasService.editarActa(
         actaId: widget.acta.id,
         titulo: _tituloController.text,
@@ -120,6 +234,24 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
         participantes: _participantesSeleccionados,
       );
 
+      // PASO 2: Subir archivos nuevos si existen
+      if (_archivosNuevos.isNotEmpty) {
+        for (int i = 0; i < _archivosNuevos.length; i++) {
+          try {
+            await AdjuntosService.subirArchivo(
+              actaId: widget.acta.id,
+              archivo: _archivosNuevos[i],
+              descripcion: _descripcionesNuevos[i].isNotEmpty
+                  ? _descripcionesNuevos[i]
+                  : null,
+            );
+          } catch (e) {
+            print('Error al subir archivo: $e');
+            // Continuar con los demás aunque uno falle
+          }
+        }
+      }
+
       setState(() => _isLoading = false);
 
       if (resultado['success']) {
@@ -130,7 +262,7 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          
+
           // Regresar a la pantalla anterior
           Navigator.pop(context, true); // true indica que se guardaron cambios
         }
@@ -164,7 +296,7 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
         child: Stepper(
           currentStep: _currentStep,
           onStepContinue: () {
-            if (_currentStep < 2) {
+            if (_currentStep < 3) {
               setState(() => _currentStep++);
             } else {
               _guardarCambios();
@@ -192,10 +324,13 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Text(_currentStep == 2 ? 'Guardar Cambios' : 'Continuar'),
+                        : Text(_currentStep == 3
+                            ? 'Guardar Cambios'
+                            : 'Continuar'),
                   ),
                   const SizedBox(width: 12),
                   if (_currentStep > 0)
@@ -223,6 +358,11 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
               content: _buildStepContenido(),
               isActive: _currentStep >= 2,
             ),
+            Step(
+              title: const Text('Archivos Adjuntos'),
+              content: _buildStepAdjuntos(),
+              isActive: _currentStep >= 3,
+            ),
           ],
         ),
       ),
@@ -248,7 +388,6 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
         ListTile(
           title: const Text('Fecha de Reunión'),
           subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(_fechaReunion)),
@@ -260,13 +399,13 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
               firstDate: DateTime(2020),
               lastDate: DateTime.now().add(const Duration(days: 365)),
             );
-            
+
             if (fecha != null && mounted) {
               final hora = await showTimePicker(
                 context: context,
                 initialTime: TimeOfDay.fromDateTime(_fechaReunion),
               );
-              
+
               if (hora != null) {
                 setState(() {
                   _fechaReunion = DateTime(
@@ -286,7 +425,6 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
         TextFormField(
           controller: _lugarController,
           decoration: InputDecoration(
@@ -302,7 +440,6 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
         DropdownButtonFormField<String>(
           value: _tipoReunion,
           decoration: InputDecoration(
@@ -311,10 +448,15 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
           items: const [
-            DropdownMenuItem(value: 'consejo_academico', child: Text('Consejo Académico')),
-            DropdownMenuItem(value: 'comite_evaluacion', child: Text('Comité de Evaluación')),
-            DropdownMenuItem(value: 'coordinacion', child: Text('Coordinación')),
-            DropdownMenuItem(value: 'administrativa', child: Text('Administrativa')),
+            DropdownMenuItem(
+                value: 'consejo_academico', child: Text('Consejo Académico')),
+            DropdownMenuItem(
+                value: 'comite_evaluacion',
+                child: Text('Comité de Evaluación')),
+            DropdownMenuItem(
+                value: 'coordinacion', child: Text('Coordinación')),
+            DropdownMenuItem(
+                value: 'administrativa', child: Text('Administrativa')),
             DropdownMenuItem(value: 'tecnica', child: Text('Técnica')),
             DropdownMenuItem(value: 'otra', child: Text('Otra')),
           ],
@@ -325,7 +467,6 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
         DropdownButtonFormField<String>(
           value: _modalidad,
           decoration: InputDecoration(
@@ -357,7 +498,6 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        
         if (_participantesSeleccionados.isEmpty)
           const Center(
             child: Padding(
@@ -391,9 +531,7 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
               ),
             );
           }),
-        
         const SizedBox(height: 16),
-        
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -423,7 +561,6 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
         TextFormField(
           controller: _desarrolloController,
           maxLines: 8,
@@ -433,7 +570,6 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
         TextFormField(
           controller: _observacionesController,
           maxLines: 3,
@@ -442,6 +578,140 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildStepAdjuntos() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Archivos Adjuntos',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Administra los archivos adjuntos del acta.',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+        const SizedBox(height: 16),
+
+        // Archivos existentes
+        if (_adjuntosExistentes.isNotEmpty) ...[
+          const Text(
+            'Archivos existentes:',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          ..._adjuntosExistentes.map((adjunto) {
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: Icon(adjunto.icono, color: adjunto.colorIcono),
+                title: Text(adjunto.nombreOriginal),
+                subtitle: Text(adjunto.tamanoFormateado),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => _eliminarAdjuntoExistente(adjunto),
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 16),
+        ],
+
+        // Botón para agregar nuevos archivos
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _seleccionarArchivo,
+            icon: const Icon(Icons.attach_file),
+            label: const Text('Agregar Archivo'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF39A900),
+              side: const BorderSide(color: Color(0xFF39A900)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Archivos nuevos seleccionados
+        if (_archivosNuevos.isNotEmpty) ...[
+          const Text(
+            'Nuevos archivos para subir:',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          ..._archivosNuevos.asMap().entries.map((entry) {
+            final index = entry.key;
+            final archivo = entry.value;
+            final nombreArchivo =
+                archivo.path.split('/').last.split('\\').last;
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.insert_drive_file,
+                            color: Color(0xFF39A900)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            nombreArchivo,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete,
+                              color: Colors.red, size: 20),
+                          onPressed: () => _eliminarArchivoNuevo(index),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Descripción (opcional)',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      maxLines: 2,
+                      onChanged: (value) {
+                        _descripcionesNuevos[index] = value;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+
+        // Mensaje si no hay archivos
+        if (_adjuntosExistentes.isEmpty && _archivosNuevos.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text(
+                'No hay archivos adjuntos',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -477,7 +747,7 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
                       final yaSeleccionado = _participantesSeleccionados.any(
                         (p) => p['usuario_id'] == usuario['id'],
                       );
-                      
+
                       return DropdownMenuItem(
                         value: usuario,
                         enabled: !yaSeleccionado,
@@ -517,7 +787,8 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
                       setState(() {
                         _participantesSeleccionados.add({
                           'usuario_id': usuarioSeleccionado!['id'],
-                          'nombre_completo': usuarioSeleccionado!['nombre_completo'],
+                          'nombre_completo':
+                              usuarioSeleccionado!['nombre_completo'],
                           'rol_en_reunion': rolController.text,
                           'obligatorio_firma': true,
                         });

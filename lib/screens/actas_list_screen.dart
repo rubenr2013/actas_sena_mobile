@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/acta.dart';
 import '../services/actas_service.dart';
-import 'acta_detalle_screen.dart'; 
+import 'acta_detalle_screen.dart';
 import 'crear_acta_screen.dart';
 
 class ActasListScreen extends StatefulWidget {
@@ -128,7 +128,7 @@ class _ActasListScreenState extends State<ActasListScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context)=> const CrearActaScreen()),
+            MaterialPageRoute(builder: (context) => const CrearActaScreen()),
           );
         },
         backgroundColor: const Color(0xFF39A900),
@@ -175,7 +175,8 @@ class _ActasListScreenState extends State<ActasListScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF39A900), width: 2),
+                borderSide:
+                    const BorderSide(color: Color(0xFF39A900), width: 2),
               ),
             ),
           ),
@@ -196,10 +197,14 @@ class _ActasListScreenState extends State<ActasListScreen> {
                   isExpanded: true,
                   items: const [
                     DropdownMenuItem(value: 'todos', child: Text('Todos')),
-                    DropdownMenuItem(value: 'borrador', child: Text('Borrador')),
-                    DropdownMenuItem(value: 'en_revision', child: Text('En Revisión')),
-                    DropdownMenuItem(value: 'finalizada', child: Text('Finalizada')),
-                    DropdownMenuItem(value: 'archivada', child: Text('Archivada')),
+                    DropdownMenuItem(
+                        value: 'borrador', child: Text('Borrador')),
+                    DropdownMenuItem(
+                        value: 'en_revision', child: Text('En Revisión')),
+                    DropdownMenuItem(
+                        value: 'finalizada', child: Text('Finalizada')),
+                    DropdownMenuItem(
+                        value: 'archivada', child: Text('Archivada')),
                   ],
                   onChanged: _onFiltroChanged,
                 ),
@@ -222,7 +227,6 @@ class _ActasListScreenState extends State<ActasListScreen> {
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navegar a detalle de acta
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -251,7 +255,8 @@ class _ActasListScreenState extends State<ActasListScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       color: acta.estadoColor,
                       borderRadius: BorderRadius.circular(12),
@@ -268,7 +273,7 @@ class _ActasListScreenState extends State<ActasListScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              
+
               // Título
               Text(
                 acta.titulo,
@@ -280,7 +285,7 @@ class _ActasListScreenState extends State<ActasListScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 12),
-              
+
               // Información adicional
               Row(
                 children: [
@@ -304,7 +309,7 @@ class _ActasListScreenState extends State<ActasListScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              
+
               Row(
                 children: [
                   Icon(Icons.category, size: 16, color: Colors.grey[600]),
@@ -330,12 +335,13 @@ class _ActasListScreenState extends State<ActasListScreen> {
                   ),
                 ],
               ),
-              
+
               // Badge de IA si aplica
               if (acta.generadaConIa) ...[
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.purple.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -344,7 +350,8 @@ class _ActasListScreenState extends State<ActasListScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.psychology, size: 12, color: Colors.purple),
+                      const Icon(Icons.psychology,
+                          size: 12, color: Colors.purple),
                       const SizedBox(width: 4),
                       const Text(
                         'Generada con IA',
@@ -358,9 +365,9 @@ class _ActasListScreenState extends State<ActasListScreen> {
                   ),
                 ),
               ],
-              
+
               const Divider(height: 20),
-              
+
               // Progreso de firmas
               Row(
                 children: [
@@ -450,7 +457,8 @@ class _ActasListScreenState extends State<ActasListScreen> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
-                if (_searchController.text.isNotEmpty || _filtroEstado != 'todos') {
+                if (_searchController.text.isNotEmpty ||
+                    _filtroEstado != 'todos') {
                   // Limpiar filtros
                   setState(() {
                     _searchController.clear();
@@ -477,7 +485,8 @@ class _ActasListScreenState extends State<ActasListScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF39A900),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],

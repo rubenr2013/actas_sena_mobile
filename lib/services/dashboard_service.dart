@@ -6,7 +6,7 @@ class DashboardService {
   static Future<DashboardData> getDashboard() async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }

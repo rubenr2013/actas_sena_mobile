@@ -26,8 +26,8 @@ class _BackupPersonalScreenState extends State<BackupPersonalScreen> {
         _mostrarDialog(
           'Exportación Exitosa',
           'Tus datos se han exportado correctamente.\n\n'
-          'Archivo: ${resultado['filename']}\n'
-          'Ubicación: ${resultado['filepath']}',
+              'Archivo: ${resultado['filename']}\n'
+              'Ubicación: ${resultado['filepath']}',
           Icons.check_circle,
           Colors.green,
         );
@@ -73,7 +73,8 @@ class _BackupPersonalScreenState extends State<BackupPersonalScreen> {
     }
   }
 
-  void _mostrarConfirmacionImportacion(String filePath, Map<String, dynamic> validacion) {
+  void _mostrarConfirmacionImportacion(
+      String filePath, Map<String, dynamic> validacion) {
     final stats = validacion['stats'] as Map<String, dynamic>;
 
     showDialog(
@@ -154,7 +155,8 @@ class _BackupPersonalScreenState extends State<BackupPersonalScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final resultado = await BackupPersonalService.confirmarImportacion(filePath);
+      final resultado =
+          await BackupPersonalService.confirmarImportacion(filePath);
 
       setState(() => _isLoading = false);
 
@@ -165,7 +167,7 @@ class _BackupPersonalScreenState extends State<BackupPersonalScreen> {
         _mostrarDialog(
           'Importación Exitosa',
           'Tus datos se han restaurado correctamente.\n\n'
-          'Actas restauradas: ${stats['actas_restauradas']}',
+              'Actas restauradas: ${stats['actas_restauradas']}',
           Icons.check_circle,
           Colors.green,
         );
@@ -178,7 +180,8 @@ class _BackupPersonalScreenState extends State<BackupPersonalScreen> {
     }
   }
 
-  void _mostrarDialog(String titulo, String mensaje, IconData icono, Color color) {
+  void _mostrarDialog(
+      String titulo, String mensaje, IconData icono, Color color) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -254,7 +257,8 @@ class _BackupPersonalScreenState extends State<BackupPersonalScreen> {
                   // Card de Exportar
                   _buildCard(
                     titulo: 'Exportar Mis Datos',
-                    descripcion: 'Descarga un archivo ZIP con todas tus actas, compromisos y firmas. Úsalo como respaldo personal.',
+                    descripcion:
+                        'Descarga un archivo ZIP con todas tus actas, compromisos y firmas. Úsalo como respaldo personal.',
                     icono: Icons.download,
                     color: const Color(0xFF39A900),
                     botonTexto: 'Exportar Ahora',
@@ -266,7 +270,8 @@ class _BackupPersonalScreenState extends State<BackupPersonalScreen> {
                   // Card de Importar
                   _buildCard(
                     titulo: 'Importar Mis Datos',
-                    descripcion: '⚠️ Restaura tus datos desde un backup. ADVERTENCIA: Esto reemplazará tus datos actuales.',
+                    descripcion:
+                        '⚠️ Restaura tus datos desde un backup. ADVERTENCIA: Esto reemplazará tus datos actuales.',
                     icono: Icons.upload,
                     color: Colors.orange,
                     botonTexto: 'Importar Backup',

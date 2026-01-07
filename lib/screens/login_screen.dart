@@ -3,7 +3,8 @@ import '../services/auth_service.dart';
 import '../models/usuario.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
-import 'Forgotpasswordscreen.dart';
+import 'forgot_password_screen.dart';
+import 'verificar_email_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,13 +63,30 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         } else {
-          // Error de login
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['error'] ?? 'Error al iniciar sesión'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          // Manejar errores específicos
+          final codigoError = result['codigo_error'];
+
+          if (codigoError == 'EMAIL_NO_VERIFICADO') {
+            // Mostrar diálogo para verificar email
+            _mostrarDialogoEmailNoVerificado(_emailController.text.trim());
+          } else if (codigoError == 'CUENTA_NO_APROBADA') {
+            // Cuenta pendiente de aprobación
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('⏳ Tu cuenta está en proceso de aprobación por un administrador'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 5),
+              ),
+            );
+          } else {
+            // Error genérico
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result['error'] ?? 'Error al iniciar sesión'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       } catch (e) {
         setState(() {
@@ -85,6 +103,42 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     }
+  }
+
+  void _mostrarDialogoEmailNoVerificado(String email) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Email no verificado'),
+        content: const Text(
+            'Tu email aún no ha sido verificado. '
+            '¿Deseas verificarlo ahora?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VerificarEmailScreen(email: email),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF39A900),
+            ),
+            child: const Text(
+              'Verificar ahora',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

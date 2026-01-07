@@ -84,8 +84,10 @@ class CompromisosService {
 
       final body = <String, dynamic>{};
       if (estado != null) body['estado'] = estado;
-      if (porcentajeAvance != null) body['porcentaje_avance'] = porcentajeAvance;
-      if (reporteCumplimiento != null) body['reporte_cumplimiento'] = reporteCumplimiento;
+      if (porcentajeAvance != null)
+        body['porcentaje_avance'] = porcentajeAvance;
+      if (reporteCumplimiento != null)
+        body['reporte_cumplimiento'] = reporteCumplimiento;
 
       final response = await ApiService.put(
         '/actas/api/compromisos/$compromisoId/actualizar/',

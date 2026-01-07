@@ -21,7 +21,8 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   @override
   void initState() {
     super.initState();
-    _firstNameController = TextEditingController(text: widget.usuario.firstName);
+    _firstNameController =
+        TextEditingController(text: widget.usuario.firstName);
     _lastNameController = TextEditingController(text: widget.usuario.lastName);
     _emailController = TextEditingController(text: widget.usuario.email);
   }
@@ -56,7 +57,8 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context, true); // Retorna true para indicar que se actualizó
+          Navigator.pop(
+              context, true); // Retorna true para indicar que se actualizó
         }
       }
     } catch (e) {
@@ -120,7 +122,8 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFF39A900).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -177,7 +180,8 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF39A900), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF39A900), width: 2),
                 ),
               ),
               validator: (value) {
@@ -197,13 +201,15 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
               controller: _lastNameController,
               decoration: InputDecoration(
                 labelText: 'Apellido',
-                prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF39A900)),
+                prefixIcon:
+                    const Icon(Icons.person_outline, color: Color(0xFF39A900)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF39A900), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF39A900), width: 2),
                 ),
               ),
               validator: (value) {
@@ -230,7 +236,8 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF39A900), width: 2),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF39A900), width: 2),
                 ),
               ),
               validator: (value) {
@@ -268,7 +275,8 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
                     : const Text(

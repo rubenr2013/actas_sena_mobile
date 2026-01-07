@@ -42,7 +42,8 @@ class Acta {
       modalidad: json['modalidad'],
       generadaConIa: json['generada_con_ia'],
       creador: Creador.fromJson(json['creador']),
-      estadisticasFirmas: EstadisticasFirmas.fromJson(json['estadisticas_firmas']),
+      estadisticasFirmas:
+          EstadisticasFirmas.fromJson(json['estadisticas_firmas']),
     );
   }
 
@@ -193,7 +194,8 @@ class ActaDetalle {
       compromisos: (json['compromisos'] as List)
           .map((c) => Compromiso.fromJson(c))
           .toList(),
-      estadisticasFirmas: EstadisticasFirmas.fromJson(json['estadisticas_firmas']),
+      estadisticasFirmas:
+          EstadisticasFirmas.fromJson(json['estadisticas_firmas']),
       permisosUsuario: PermisosUsuario.fromJson(json['permisos_usuario']),
     );
   }
@@ -286,7 +288,7 @@ class Creador {
 
 class Participante {
   final int id;
-  final Usuario usuario;
+  final UsuarioParticipante usuario;
   final String rolEnReunion;
   final bool obligatorioFirma;
   final Firma? firma;
@@ -302,7 +304,7 @@ class Participante {
   factory Participante.fromJson(Map<String, dynamic> json) {
     return Participante(
       id: json['id'],
-      usuario: Usuario.fromJson(json['usuario']),
+      usuario: UsuarioParticipante.fromJson(json['usuario']),
       rolEnReunion: json['rol_en_reunion'] ?? '',
       obligatorioFirma: json['obligatorio_firma'],
       firma: json['firma'] != null ? Firma.fromJson(json['firma']) : null,
@@ -310,21 +312,21 @@ class Participante {
   }
 }
 
-class Usuario {
+class UsuarioParticipante {
   final int id;
   final String nombreCompleto;
   final String email;
   final String rol;
 
-  Usuario({
+  UsuarioParticipante({
     required this.id,
     required this.nombreCompleto,
     required this.email,
     required this.rol,
   });
 
-  factory Usuario.fromJson(Map<String, dynamic> json) {
-    return Usuario(
+  factory UsuarioParticipante.fromJson(Map<String, dynamic> json) {
+    return UsuarioParticipante(
       id: json['id'],
       nombreCompleto: json['nombre_completo'],
       email: json['email'],
@@ -347,8 +349,8 @@ class Firma {
   factory Firma.fromJson(Map<String, dynamic> json) {
     return Firma(
       firmado: json['firmado'],
-      fechaFirma: json['fecha_firma'] != null 
-          ? DateTime.parse(json['fecha_firma']) 
+      fechaFirma: json['fecha_firma'] != null
+          ? DateTime.parse(json['fecha_firma'])
           : null,
       tieneFirma: json['tiene_firma'] ?? false,
     );

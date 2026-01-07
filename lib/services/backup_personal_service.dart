@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'api_service.dart';
+import '../utils/file_utils.dart';
 
 class BackupPersonalService {
   /// Exportar datos del usuario
   static Future<Map<String, dynamic>> exportarDatos() async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -22,25 +22,15 @@ class BackupPersonalService {
       );
 
       if (response.statusCode == 200) {
-        // Obtener directorio de descargas
-        Directory? directory;
-        if (Platform.isAndroid) {
-          directory = Directory('/storage/emulated/0/Download');
-          if (!await directory.exists()) {
-            directory = await getExternalStorageDirectory();
-          }
-        } else {
-          directory = await getApplicationDocumentsDirectory();
-        }
-
-        // Generar nombre de archivo
+        // Generar nombre de archivo con timestamp
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final filename = 'backup_personal_$timestamp.zip';
-        final filePath = '${directory!.path}/$filename';
 
-        // Guardar archivo
-        final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
+        // Usar utilidad para guardar archivo
+        final filePath = await FileUtils.saveFile(
+          response.bodyBytes,
+          filename,
+        );
 
         return {
           'success': true,
@@ -60,7 +50,7 @@ class BackupPersonalService {
   static Future<Map<String, dynamic>> validarBackup(String filePath) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -104,10 +94,11 @@ class BackupPersonalService {
   }
 
   /// Confirmar e importar datos
-  static Future<Map<String, dynamic>> confirmarImportacion(String filePath) async {
+  static Future<Map<String, dynamic>> confirmarImportacion(
+      String filePath) async {
     try {
       final token = await ApiService.getToken();
-      
+
       if (token == null) {
         throw Exception('No autenticado');
       }
@@ -120,7 +111,8 @@ class BackupPersonalService {
       // Crear request multipart
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${ApiService.baseUrl}/actas/api/perfil/confirmar-importacion/'),
+        Uri.parse(
+            '${ApiService.baseUrl}/actas/api/perfil/confirmar-importacion/'),
       );
 
       request.headers['Authorization'] = 'Bearer $token';

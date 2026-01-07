@@ -31,7 +31,7 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
 
     try {
       final compromisos = await CompromisosService.obtenerMisCompromisos();
-      
+
       setState(() {
         _compromisos = compromisos;
         _isLoading = false;
@@ -63,7 +63,7 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
         children: [
           // Filtros
           _buildFiltros(),
-          
+
           // Lista de compromisos
           Expanded(
             child: _isLoading
@@ -104,7 +104,7 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
 
   Widget _buildChipFiltro(String label, String estado) {
     final isSelected = _filtroEstado == estado;
-    
+
     return FilterChip(
       label: Text(label),
       selected: isSelected,
@@ -140,10 +140,10 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
     final porcentaje = compromiso['porcentaje_avance'] as int;
     final diasRestantes = compromiso['dias_restantes'] as int;
     final fechaLimite = DateTime.parse(compromiso['fecha_limite']);
-    
+
     Color estadoColor;
     IconData estadoIcon;
-    
+
     switch (estado) {
       case 'pendiente':
         estadoColor = Colors.orange;
@@ -195,7 +195,8 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: estadoColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -231,7 +232,8 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(4),
@@ -251,9 +253,9 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Descripción
               Text(
                 compromiso['descripcion'],
@@ -262,9 +264,9 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Acta título
               Text(
                 'Acta: ${compromiso['acta']['titulo']}',
@@ -273,9 +275,9 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
                   color: Colors.grey[600],
                 ),
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Fecha límite y días restantes
               Row(
                 children: [
@@ -296,8 +298,8 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
                   Icon(
                     diasRestantes < 0 ? Icons.warning : Icons.access_time,
                     size: 16,
-                    color: diasRestantes < 0 
-                        ? Colors.red 
+                    color: diasRestantes < 0
+                        ? Colors.red
                         : diasRestantes <= 3
                             ? Colors.orange
                             : Colors.grey[600],
@@ -311,19 +313,21 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
                             : 'Faltan $diasRestantes días',
                     style: TextStyle(
                       fontSize: 14,
-                      color: diasRestantes < 0 
-                          ? Colors.red 
+                      color: diasRestantes < 0
+                          ? Colors.red
                           : diasRestantes <= 3
                               ? Colors.orange
                               : Colors.grey[600],
-                      fontWeight: diasRestantes <= 3 ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: diasRestantes <= 3
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Barra de progreso
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,9 +374,9 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
                   ),
                 ],
               ),
-              
+
               // Reporte (si existe)
-              if (compromiso['reporte_cumplimiento'] != null && 
+              if (compromiso['reporte_cumplimiento'] != null &&
                   compromiso['reporte_cumplimiento'].toString().isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -387,7 +391,8 @@ class _MisCompromisosScreenState extends State<MisCompromisosScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.note_alt, size: 16, color: Colors.blue[700]),
+                          Icon(Icons.note_alt,
+                              size: 16, color: Colors.blue[700]),
                           const SizedBox(width: 4),
                           Text(
                             'Reporte:',

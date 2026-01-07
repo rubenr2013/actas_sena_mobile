@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'utils/theme.dart';
-import 'screens/mis_compromisos_screen.dart';
 
 void main() {
   runApp(const ActasSenaApp());
@@ -16,7 +15,6 @@ class ActasSenaApp extends StatelessWidget {
     return MaterialApp(
       title: 'SENA Actas',
       debugShowCheckedModeBanner: false,
-
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

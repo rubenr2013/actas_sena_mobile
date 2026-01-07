@@ -18,7 +18,7 @@ class NotificacionesService {
       // Construir query parameters
       String endpoint = '/notifications/api/';
       List<String> params = [];
-      
+
       if (leida != null) {
         params.add('leida=${leida ? "true" : "false"}');
       }
@@ -26,7 +26,7 @@ class NotificacionesService {
         params.add('tipo=$tipo');
       }
       params.add('limit=$limit');
-      
+
       if (params.isNotEmpty) {
         endpoint += '?${params.join('&')}';
       }
@@ -38,7 +38,7 @@ class NotificacionesService {
         final notificaciones = (data['data']['notificaciones'] as List)
             .map((json) => Notificacion.fromJson(json))
             .toList();
-        
+
         return {
           'notificaciones': notificaciones,
           'total_no_leidas': data['data']['total_no_leidas'],

@@ -7,6 +7,8 @@ import 'firmar_acta_screen.dart';
 import 'editar_acta_screen.dart';
 import '../services/pdf_service.dart';
 import 'package:open_file/open_file.dart';
+import '../services/adjuntos_service.dart';
+import '../models/archivo_adjunto.dart';
 
 class ActaDetalleScreen extends StatefulWidget {
   final int actaId;
@@ -21,11 +23,14 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
   ActaDetalle? _acta;
   bool _isLoading = true;
   String? _error;
+  List<ArchivoAdjunto> _adjuntos = [];
+  bool _cargandoAdjuntos = false;
 
   @override
   void initState() {
     super.initState();
     _loadActa();
+    _cargarAdjuntos();
   }
 
   Future<void> _loadActa() async {
@@ -46,6 +51,56 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _cargarAdjuntos() async {
+    setState(() => _cargandoAdjuntos = true);
+    try {
+      final adjuntos = await AdjuntosService.listarAdjuntos(widget.actaId);
+      setState(() {
+        _adjuntos = adjuntos;
+        _cargandoAdjuntos = false;
+      });
+    } catch (e) {
+      setState(() => _cargandoAdjuntos = false);
+    }
+  }
+
+  Future<void> _descargarAdjunto(ArchivoAdjunto adjunto) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Descargando archivo...')),
+      );
+
+      final filePath = await AdjuntosService.descargarAdjunto(
+        actaId: widget.actaId,
+        adjuntoId: adjunto.id,
+        nombreArchivo: adjunto.nombreOriginal,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Archivo descargado: $filePath'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Abrir',
+              textColor: Colors.white,
+              onPressed: () => OpenFile.open(filePath),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al descargar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -159,12 +214,14 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final resultado = await ActasService.aplicarSilencioAdministrativo(widget.actaId);
+      final resultado =
+          await ActasService.aplicarSilencioAdministrativo(widget.actaId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(resultado['message'] ?? 'Silencio administrativo aplicado'),
+            content: Text(
+                resultado['message'] ?? 'Silencio administrativo aplicado'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 3),
           ),
@@ -224,6 +281,7 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
                         _buildContenido(),
                         _buildParticipantes(),
                         _buildCompromisos(),
+                        _buildArchivosAdjuntos(),
                         _buildBotonesAccion(),
                         const SizedBox(height: 20),
                       ],
@@ -238,7 +296,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
 
                 // Buscar la firma pendiente de este usuario para esta acta
                 try {
-                  final firmasPendientes = await FirmasService.getActasPendientesFirma();
+                  final firmasPendientes =
+                      await FirmasService.getActasPendientesFirma();
                   final firmaPendiente = firmasPendientes.firstWhere(
                     (f) => f.acta.id == widget.actaId,
                   );
@@ -248,7 +307,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
                   // Navegar a firmar
                   final resultado = await navigator.push(
                     MaterialPageRoute(
-                      builder: (context) => FirmarActaScreen(firmaPendiente: firmaPendiente),
+                      builder: (context) =>
+                          FirmarActaScreen(firmaPendiente: firmaPendiente),
                     ),
                   );
 
@@ -301,7 +361,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(20),
@@ -392,9 +453,9 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
             _acta!.modalidadTexto,
           ),
           _buildInfoRow(Icons.person, 'Creador', _acta!.creador.nombreCompleto),
-          _buildInfoRow(
-              Icons.access_time, 'Creada', dateFormat.format(_acta!.fechaCreacion)),
-          
+          _buildInfoRow(Icons.access_time, 'Creada',
+              dateFormat.format(_acta!.fechaCreacion)),
+
           // Progreso de firmas
           const SizedBox(height: 16),
           const Text(
@@ -500,7 +561,7 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
             ),
           ),
           const Divider(height: 20),
-          
+
           // Orden del día
           const Text(
             'Orden del Día',
@@ -518,9 +579,9 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
               color: _acta!.ordenDia.isEmpty ? Colors.grey : Colors.black87,
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Desarrollo
           const Text(
             'Desarrollo',
@@ -538,7 +599,7 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
               color: _acta!.desarrollo.isEmpty ? Colors.grey : Colors.black87,
             ),
           ),
-          
+
           // Observaciones si existen
           if (_acta!.observaciones.isNotEmpty) ...[
             const SizedBox(height: 20),
@@ -636,7 +697,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(participante.usuario.email, style: const TextStyle(fontSize: 12)),
+            Text(participante.usuario.email,
+                style: const TextStyle(fontSize: 12)),
             if (participante.rolEnReunion.isNotEmpty)
               Text(
                 participante.rolEnReunion,
@@ -750,7 +812,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: compromiso.estadoColor,
                     borderRadius: BorderRadius.circular(12),
@@ -815,6 +878,115 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
     );
   }
 
+  Widget _buildArchivosAdjuntos() {
+    if (_acta == null) return const SizedBox();
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.attach_file, color: Color(0xFF39A900)),
+              const SizedBox(width: 8),
+              const Text(
+                'Archivos Adjuntos',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${_adjuntos.length}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF39A900),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 20),
+
+          // Loading o contenido
+          if (_cargandoAdjuntos)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_adjuntos.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Text(
+                  'No hay archivos adjuntos',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            )
+          else
+            // Lista de archivos
+            ..._adjuntos.map((adjunto) {
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: Icon(adjunto.icono, color: adjunto.colorIcono, size: 32),
+                  title: Text(
+                    adjunto.nombreOriginal,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        adjunto.tamanoFormateado,
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      if (adjunto.descripcion != null &&
+                          adjunto.descripcion!.isNotEmpty)
+                        Text(
+                          adjunto.descripcion!,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                    ],
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.download, color: Color(0xFF39A900)),
+                    onPressed: () => _descargarAdjunto(adjunto),
+                    tooltip: 'Descargar',
+                  ),
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptySection(String title, IconData icon) {
     return Container(
       margin: const EdgeInsets.all(16),
@@ -868,23 +1040,27 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
           const SizedBox(height: 12),
 
           // Botón: Editar Acta (solo si está en borrador y tiene permisos)
-          if (_acta!.estado == 'borrador' && _acta!.permisosUsuario.puedeEditar) ...[
+          if (_acta!.estado == 'borrador' &&
+              _acta!.permisosUsuario.puedeEditar) ...[
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _isLoading ? null : () async {
-                  final resultado = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EditarActaScreen(acta: _acta!),
-                    ),
-                  );
+                onPressed: _isLoading
+                    ? null
+                    : () async {
+                        final resultado = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                EditarActaScreen(acta: _acta!),
+                          ),
+                        );
 
-                  // Si se guardaron cambios, recargar el acta
-                  if (resultado == true && mounted) {
-                    _loadActa();
-                  }
-                },
+                        // Si se guardaron cambios, recargar el acta
+                        if (resultado == true && mounted) {
+                          _loadActa();
+                        }
+                      },
                 icon: const Icon(Icons.edit),
                 label: const Text('Editar Acta'),
                 style: ElevatedButton.styleFrom(
@@ -902,7 +1078,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _isLoading ? null : () => _cambiarEstado('en_revision'),
+                onPressed:
+                    _isLoading ? null : () => _cambiarEstado('en_revision'),
                 icon: const Icon(Icons.send),
                 label: const Text('Enviar a Revisión'),
                 style: ElevatedButton.styleFrom(
@@ -916,7 +1093,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
           ],
 
           // Botón: Aplicar Silencio Administrativo (solo si cumple condiciones)
-          if (_acta!.estado == 'en_revision' && _acta!.puedeAplicarSilencio) ...[
+          if (_acta!.estado == 'en_revision' &&
+              _acta!.puedeAplicarSilencio) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -928,7 +1106,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                      Icon(Icons.info_outline,
+                          color: Colors.orange.shade700, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -945,7 +1124,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _aplicarSilencioAdministrativo,
+                      onPressed:
+                          _isLoading ? null : _aplicarSilencioAdministrativo,
                       icon: const Icon(Icons.gavel),
                       label: const Text('Aplicar Silencio Administrativo'),
                       style: ElevatedButton.styleFrom(
@@ -966,7 +1146,8 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: _isLoading ? null : () => _cambiarEstado('archivada'),
+                onPressed:
+                    _isLoading ? null : () => _cambiarEstado('archivada'),
                 icon: const Icon(Icons.archive),
                 label: const Text('Archivar Acta'),
                 style: OutlinedButton.styleFrom(
