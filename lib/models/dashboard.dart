@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'firma_pendiente.dart';
 
 class DashboardData {
   final Estadisticas estadisticas;
@@ -108,23 +109,6 @@ class ActaReciente {
       default:
         return Colors.grey;
     }
-  }
-}
-
-class FirmaPendiente {
-  final int id;
-  final ActaInfo acta;
-
-  FirmaPendiente({
-    required this.id,
-    required this.acta,
-  });
-
-  factory FirmaPendiente.fromJson(Map<String, dynamic> json) {
-    return FirmaPendiente(
-      id: json['id'],
-      acta: ActaInfo.fromJson(json['acta']),
-    );
   }
 }
 

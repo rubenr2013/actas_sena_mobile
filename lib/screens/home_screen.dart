@@ -5,6 +5,7 @@ import '../services/dashboard_service.dart';
 import '../services/api_service.dart';
 import '../models/usuario.dart';
 import '../models/dashboard.dart';
+import '../models/firma_pendiente.dart';
 import 'login_screen.dart';
 import 'actas_list_screen.dart';
 import 'perfil_screen.dart';
