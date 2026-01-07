@@ -1,6 +1,6 @@
 class AppConstants {
   // API URLs
-  static const String baseUrl = 'http://10.4.219.198:8000/';
+  static const String baseUrl = 'http://10.4.219.198:8000';
   static const String loginEndpoint = '/actas/api/auth/login/';
   static const String dashboardEndpoint = '/actas/api/dashboard/';
   static const String actasEndpoint = '/actas/api/actas/';
