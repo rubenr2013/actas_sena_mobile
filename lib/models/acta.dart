@@ -30,14 +30,30 @@ class Acta {
   });
 
   factory Acta.fromJson(Map<String, dynamic> json) {
+    // Función auxiliar para parsear fechas de forma segura
+    DateTime parseDateTimeSafe(dynamic value, {DateTime? fallback}) {
+      if (value == null) return fallback ?? DateTime.now();
+      try {
+        if (value is String) {
+          return DateTime.parse(value);
+        } else if (value is DateTime) {
+          return value;
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('⚠️ Error parseando fecha: $value - $e');
+      }
+      return fallback ?? DateTime.now();
+    }
+
     return Acta(
       id: json['id'],
       numeroActa: json['numero_acta'],
       titulo: json['titulo'],
       tipoReunion: json['tipo_reunion'],
       estado: json['estado'],
-      fechaReunion: DateTime.parse(json['fecha_reunion']),
-      fechaCreacion: DateTime.parse(json['fecha_creacion']),
+      fechaReunion: parseDateTimeSafe(json['fecha_reunion']),
+      fechaCreacion: parseDateTimeSafe(json['fecha_creacion']),
       lugarReunion: json['lugar_reunion'],
       modalidad: json['modalidad'],
       generadaConIa: json['generada_con_ia'],
@@ -165,15 +181,46 @@ class ActaDetalle {
   });
 
   factory ActaDetalle.fromJson(Map<String, dynamic> json) {
+    // Función auxiliar para parsear fechas de forma segura
+    DateTime parseDateTimeSafe(dynamic value, {DateTime? fallback}) {
+      if (value == null) return fallback ?? DateTime.now();
+      try {
+        if (value is String) {
+          return DateTime.parse(value);
+        } else if (value is DateTime) {
+          return value;
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('⚠️ Error parseando fecha: $value - $e');
+      }
+      return fallback ?? DateTime.now();
+    }
+
+    DateTime? parseDateTimeNullable(dynamic value) {
+      if (value == null) return null;
+      try {
+        if (value is String) {
+          return DateTime.parse(value);
+        } else if (value is DateTime) {
+          return value;
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('⚠️ Error parseando fecha: $value - $e');
+      }
+      return null;
+    }
+
     return ActaDetalle(
       id: json['id'],
       numeroActa: json['numero_acta'],
       titulo: json['titulo'],
       tipoReunion: json['tipo_reunion'],
       estado: json['estado'],
-      fechaReunion: DateTime.parse(json['fecha_reunion']),
-      fechaCreacion: DateTime.parse(json['fecha_creacion']),
-      fechaModificacion: DateTime.parse(json['fecha_modificacion']),
+      fechaReunion: parseDateTimeSafe(json['fecha_reunion']),
+      fechaCreacion: parseDateTimeSafe(json['fecha_creacion']),
+      fechaModificacion: parseDateTimeSafe(json['fecha_modificacion']),
       lugarReunion: json['lugar_reunion'],
       modalidad: json['modalidad'],
       ordenDia: json['orden_dia'] ?? '',
@@ -182,9 +229,7 @@ class ActaDetalle {
       generadaConIa: json['generada_con_ia'],
       promptOriginal: json['prompt_original'],
       modeloIaUsado: json['modelo_ia_usado'],
-      fechaLimiteFirmas: json['fecha_limite_firmas'] != null
-          ? DateTime.parse(json['fecha_limite_firmas'])
-          : null,
+      fechaLimiteFirmas: parseDateTimeNullable(json['fecha_limite_firmas']),
       silencioAdministrativo: json['silencio_administrativo'] ?? false,
       puedeAplicarSilencio: json['puede_aplicar_silencio'] ?? false,
       creador: Creador.fromJson(json['creador']),
@@ -347,11 +392,24 @@ class Firma {
   });
 
   factory Firma.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDateTimeNullable(dynamic value) {
+      if (value == null) return null;
+      try {
+        if (value is String) {
+          return DateTime.parse(value);
+        } else if (value is DateTime) {
+          return value;
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('⚠️ Error parseando fecha de firma: $value - $e');
+      }
+      return null;
+    }
+
     return Firma(
       firmado: json['firmado'],
-      fechaFirma: json['fecha_firma'] != null
-          ? DateTime.parse(json['fecha_firma'])
-          : null,
+      fechaFirma: parseDateTimeNullable(json['fecha_firma']),
       tieneFirma: json['tiene_firma'] ?? false,
     );
   }
@@ -379,11 +437,26 @@ class Compromiso {
   });
 
   factory Compromiso.fromJson(Map<String, dynamic> json) {
+    DateTime parseDateTimeSafe(dynamic value, {DateTime? fallback}) {
+      if (value == null) return fallback ?? DateTime.now();
+      try {
+        if (value is String) {
+          return DateTime.parse(value);
+        } else if (value is DateTime) {
+          return value;
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('⚠️ Error parseando fecha límite: $value - $e');
+      }
+      return fallback ?? DateTime.now();
+    }
+
     return Compromiso(
       id: json['id'],
       descripcion: json['descripcion'],
       responsable: Responsable.fromJson(json['responsable']),
-      fechaLimite: DateTime.parse(json['fecha_limite']),
+      fechaLimite: parseDateTimeSafe(json['fecha_limite']),
       estado: json['estado'],
       porcentajeAvance: json['porcentaje_avance'],
       diasRestantes: json['dias_restantes'],

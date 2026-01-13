@@ -117,6 +117,7 @@ class ActasService {
     String desarrollo = '',
     String observaciones = '',
     List<Map<String, dynamic>> participantes = const [],
+    List<Map<String, dynamic>> compromisos = const [],
     bool generadaConIa = false,
     String promptOriginal = '',
     String modeloIaUsado = '',
@@ -140,6 +141,7 @@ class ActasService {
           'desarrollo': desarrollo,
           'observaciones': observaciones,
           'participantes': participantes,
+          'compromisos': compromisos,
           'generada_con_ia': generadaConIa,
           'prompt_original': promptOriginal,
           'modelo_ia_usado': modeloIaUsado,
@@ -153,6 +155,7 @@ class ActasService {
           'success': true,
           'acta_id': data['data']['acta_id'],
           'numero_acta': data['data']['numero_acta'],
+          'compromisos_creados': data['data']['compromisos_creados'] ?? [],
         };
       } else {
         final data = json.decode(response.body);

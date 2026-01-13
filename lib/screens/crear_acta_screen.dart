@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/actas_service.dart';
 import 'acta_detalle_screen.dart';
-import '../services/compromisos_service.dart';
 import '../services/adjuntos_service.dart';
 
 class CrearActaScreen extends StatefulWidget {
@@ -165,7 +164,17 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // PASO 1: Crear el acta
+      // Preparar compromisos en formato correcto para el backend
+      final compromisosFormateados = _compromisosTemp.map((comp) {
+        return {
+          'descripcion': comp['descripcion'],
+          'responsable_id': comp['responsable_id'],
+          'fecha_limite': comp['fecha_limite'], // Ya está en formato YYYY-MM-DD
+          'observaciones': comp['observaciones'] ?? '',
+        };
+      }).toList();
+
+      // PASO 1: Crear el acta CON compromisos incluidos
       final resultado = await ActasService.crearActa(
         titulo: _tituloController.text,
         fechaReunion: _fechaReunion.toIso8601String(),
@@ -176,6 +185,7 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
         desarrollo: _desarrolloController.text,
         observaciones: _observacionesController.text,
         participantes: _participantesSeleccionados,
+        compromisos: compromisosFormateados,
         generadaConIa: _usarIA,
         promptOriginal: _usarIA ? _promptIAController.text : '',
         modeloIaUsado: _usarIA ? 'llama-3.3-70b-versatile' : '',
@@ -183,26 +193,9 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
 
       if (resultado['success']) {
         final actaId = resultado['acta_id'];
+        final compromisosCreados = resultado['compromisos_creados'] ?? [];
 
-        // PASO 2: Guardar compromisos si existen
-        if (_compromisosTemp.isNotEmpty) {
-          for (var compromiso in _compromisosTemp) {
-            try {
-              await CompromisosService.crearCompromiso(
-                actaId: actaId,
-                descripcion: compromiso['descripcion'],
-                responsableId: compromiso['responsable_id'],
-                fechaLimite: compromiso['fecha_limite'],
-                observaciones: compromiso['observaciones'],
-              );
-            } catch (e) {
-              print('Error al guardar compromiso: $e');
-              // Continuar con los demás aunque uno falle
-            }
-          }
-        }
-
-        // PASO 3: Subir archivos adjuntos si existen
+        // PASO 2: Subir archivos adjuntos si existen
         if (_archivosSeleccionados.isNotEmpty) {
           for (int i = 0; i < _archivosSeleccionados.length; i++) {
             try {
@@ -223,10 +216,14 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
         setState(() => _isLoading = false);
 
         if (mounted) {
+          // Construir mensaje de éxito
+          final mensaje = compromisosFormateados.isEmpty
+              ? 'Acta ${resultado['numero_acta']} creada correctamente'
+              : 'Acta ${resultado['numero_acta']} creada con ${compromisosCreados.length} compromiso(s)';
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content:
-                  Text('Acta ${resultado['numero_acta']} creada correctamente'),
+              content: Text(mensaje),
               backgroundColor: Colors.green,
             ),
           );
