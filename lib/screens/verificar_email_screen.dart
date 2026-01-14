@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 import 'login_screen.dart';
+import 'home_screen.dart';
 
 class VerificarEmailScreen extends StatefulWidget {
   final String email;
@@ -99,18 +101,47 @@ class _VerificarEmailScreenState extends State<VerificarEmailScreen> {
       if (!mounted) return;
 
       if (resultado['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Email verificado correctamente'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        // Verificar si el backend retornó token y usuario (nuevo flujo con auto-login)
+        if (resultado['token'] != null && resultado['user'] != null) {
+          // Guardar token y datos de usuario
+          await ApiService.saveToken(resultado['token'] as String);
+          await ApiService.saveUserData(resultado['user'] as Map<String, dynamic>);
 
-        // Navegar a login
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Email verificado correctamente. ¡Bienvenido!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+
+          // Pequeña pausa para que el usuario vea el mensaje de éxito
+          await Future.delayed(const Duration(milliseconds: 1500));
+
+          if (!mounted) return;
+
+          // Navegar directamente a Home (usuario ya autenticado)
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            (route) => false, // Eliminar todas las rutas anteriores
+          );
+        } else {
+          // Flujo antiguo: solo verificación sin auto-login
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Email verificado. Ahora puedes iniciar sesión.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+        }
       } else {
         _mostrarError(resultado['error'] ?? 'Código incorrecto');
         _limpiarCampos();

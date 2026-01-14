@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
+import 'verificar_email_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -106,17 +107,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
           // Registro exitoso
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content:
-                  Text(result['message'] ?? '¡Cuenta creada correctamente!'),
+              content: Text(
+                result['message'] ??
+                '¡Cuenta creada! Revisa tu email y verifica el código de 6 dígitos.',
+              ),
               backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
+              duration: const Duration(seconds: 4),
             ),
           );
 
-          // Navegar a Login
+          // Navegar a pantalla de verificación de email
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => const LoginScreen(),
+              builder: (context) => VerificarEmailScreen(
+                email: _emailController.text.trim().toLowerCase(),
+              ),
             ),
           );
         } else {

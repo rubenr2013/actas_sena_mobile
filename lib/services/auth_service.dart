@@ -282,10 +282,13 @@ class AuthService {
 
       final data = json.decode(response.body) as Map<String, dynamic>;
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && data['success'] == true) {
+        // Retornar todo lo que el backend envía
         return {
           'success': true,
           'message': data['message'] ?? 'Email verificado correctamente',
+          'token': data['token'], // Puede ser null si el backend no lo envía
+          'user': data['user'],   // Puede ser null si el backend no lo envía
         };
       } else {
         return {

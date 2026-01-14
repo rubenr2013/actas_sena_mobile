@@ -41,3 +41,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+#archivos generados por pruebas 
+CAMBIOS_VERIFICACION_EMAIL.md
+INSTRUCCIONES_BACKEND.md
+PRUEBAS_VERIFICACION.md
+
+.claude/

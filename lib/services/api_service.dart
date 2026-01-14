@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
@@ -25,11 +26,20 @@ class ApiService {
     final url = Uri.parse('$baseUrl$endpoint');
 
     try {
-      final response = await http.get(
-        url,
-        headers: _getHeaders(token: token),
-      );
+      final response = await http
+          .get(
+            url,
+            headers: _getHeaders(token: token),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw TimeoutException('La petición tardó demasiado tiempo');
+            },
+          );
       return response;
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Verifica tu conexión a internet.');
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
@@ -44,12 +54,21 @@ class ApiService {
     final url = Uri.parse('$baseUrl$endpoint');
 
     try {
-      final response = await http.post(
-        url,
-        headers: _getHeaders(token: token),
-        body: json.encode(body),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: _getHeaders(token: token),
+            body: json.encode(body),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw TimeoutException('La petición tardó demasiado tiempo');
+            },
+          );
       return response;
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Verifica tu conexión a internet.');
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
@@ -64,12 +83,21 @@ class ApiService {
     final url = Uri.parse('$baseUrl$endpoint');
 
     try {
-      final response = await http.put(
-        url,
-        headers: _getHeaders(token: token),
-        body: json.encode(body),
-      );
+      final response = await http
+          .put(
+            url,
+            headers: _getHeaders(token: token),
+            body: json.encode(body),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw TimeoutException('La petición tardó demasiado tiempo');
+            },
+          );
       return response;
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Verifica tu conexión a internet.');
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
@@ -80,11 +108,20 @@ class ApiService {
     final url = Uri.parse('$baseUrl$endpoint');
 
     try {
-      final response = await http.delete(
-        url,
-        headers: _getHeaders(token: token),
-      );
+      final response = await http
+          .delete(
+            url,
+            headers: _getHeaders(token: token),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw TimeoutException('La petición tardó demasiado tiempo');
+            },
+          );
       return response;
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Verifica tu conexión a internet.');
     } catch (e) {
       throw Exception('Error de conexión: $e');
     }
