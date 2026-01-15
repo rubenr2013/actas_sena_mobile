@@ -4,9 +4,9 @@ class AppConstants {
   // Para dispositivo físico en la misma red usa: http://192.168.X.X:8000 (cambia X por tu IP local)
   // Para producción o pruebas externas usa el dominio/ngrok correspondiente
 
-  static const String baseUrl = 'http://10.0.2.2:8000'; // Emulador Android
+  //static const String baseUrl = 'http://10.0.2.2:8000'; // Emulador Android
   // static const String baseUrl = 'http://192.168.1.100:8000'; // Dispositivo físico (ejemplo)
-  // static const String baseUrl = 'https://aprioristic-noninferentially-ralph.ngrok-free.dev'; // ngrok (temporal)
+   static const String baseUrl = 'https://aprioristic-noninferentially-ralph.ngrok-free.dev'; // ngrok (temporal)
 
   static const String loginEndpoint = '/actas/api/auth/login/';
   static const String dashboardEndpoint = '/actas/api/dashboard/';
