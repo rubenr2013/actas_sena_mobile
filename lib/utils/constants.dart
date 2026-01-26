@@ -12,7 +12,7 @@ class AppConstants {
   static const String dashboardEndpoint = '/actas/api/dashboard/';
   static const String actasEndpoint = '/actas/api/actas/';
 
-  // App Info
+  // App InfoW
   static const String appName = 'SENA Actas';
   static const String appVersion = '1.0.0';
 

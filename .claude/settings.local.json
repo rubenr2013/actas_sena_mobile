@@ -14,7 +14,9 @@
       "Bash(findstr:*)",
       "Bash(flutter build:*)",
       "Bash(Select-String -Pattern \"error|Error|ERROR|Built|FAILURE\")",
-      "Bash(Select-Object -First 20)"
+      "Bash(Select-Object -First 20)",
+      "Bash(dir:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

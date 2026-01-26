@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/acta.dart';
 import '../services/actas_service.dart';
+import '../services/api_service.dart';
 import 'acta_detalle_screen.dart';
 import 'crear_acta_screen.dart';
 
@@ -19,11 +20,22 @@ class _ActasListScreenState extends State<ActasListScreen> {
   String? _error;
   String _filtroEstado = 'todos';
   final TextEditingController _searchController = TextEditingController();
+  bool _canCreateActas = false;
 
   @override
   void initState() {
     super.initState();
     _loadActas();
+    _verificarPermisos();
+  }
+
+  Future<void> _verificarPermisos() async {
+    final canCreate = await ApiService.canCreateActas();
+    if (mounted) {
+      setState(() {
+        _canCreateActas = canCreate;
+      });
+    }
   }
 
   @override
@@ -124,16 +136,19 @@ class _ActasListScreenState extends State<ActasListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CrearActaScreen()),
-          );
-        },
-        backgroundColor: const Color(0xFF39A900),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      // Solo mostrar botón de crear acta para usuarios con permisos
+      floatingActionButton: _canCreateActas
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CrearActaScreen()),
+                );
+              },
+              backgroundColor: const Color(0xFF39A900),
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
     );
   }
 

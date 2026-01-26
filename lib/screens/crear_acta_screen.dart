@@ -206,8 +206,7 @@ class _CrearActaScreenState extends State<CrearActaScreen> {
                     ? _descripcionesAdjuntos[i]
                     : null,
               );
-            } catch (e) {
-              print('Error al subir archivo: $e');
+            } catch (_) {
               // Continuar con los demás aunque uno falle
             }
           }

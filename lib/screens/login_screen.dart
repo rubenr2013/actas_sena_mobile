@@ -346,7 +346,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Footer
                 const Text(
-                  'SENA © 2025',
+                  'SENA © 2026',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 12,

@@ -37,15 +37,25 @@ class AuthService {
           'user': Usuario.fromJson(data['user'] as Map<String, dynamic>),
         };
       } else if (response.statusCode == 401) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
         return {
           'success': false,
-          'error': 'Credenciales incorrectas',
+          'error': data['error'] ?? 'Credenciales incorrectas',
+          'codigo_error': data['codigo_error'],
+        };
+      } else if (response.statusCode == 403) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Acceso denegado',
+          'codigo_error': data['codigo_error'],
         };
       } else {
         final data = json.decode(response.body) as Map<String, dynamic>;
         return {
           'success': false,
           'error': data['error'] ?? 'Error al iniciar sesión',
+          'codigo_error': data['codigo_error'],
         };
       }
     } catch (e) {

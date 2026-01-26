@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/notificacion.dart';
 import '../services/notificaciones_service.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'acta_detalle_screen.dart';
+import 'mis_compromisos_screen.dart';
+import 'firmas_pendientes_screen.dart';
 
 class NotificacionesScreen extends StatefulWidget {
   const NotificacionesScreen({Key? key}) : super(key: key);
@@ -148,6 +151,80 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
         ),
       );
     }
+  }
+
+  /// Navega al contenido relacionado según el tipo de notificación
+  void _navegarDesdeNotificacion(Notificacion notificacion) {
+    // Primero marcar como leída si no lo está
+    if (!notificacion.leida) {
+      _marcarComoLeida(notificacion);
+    }
+
+    // Navegar según el tipo de notificación
+    switch (notificacion.tipo) {
+      case 'firma_pendiente':
+        // Navegar a firmas pendientes o al acta específica
+        if (notificacion.actaId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ActaDetalleScreen(actaId: notificacion.actaId!),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FirmasPendientesScreen(),
+            ),
+          );
+        }
+        break;
+
+      case 'firma_completada':
+      case 'acta_lista_finalizar':
+      case 'nueva_acta':
+      case 'acta_finalizada':
+      case 'silencio_administrativo':
+        // Navegar al detalle del acta
+        if (notificacion.actaId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ActaDetalleScreen(actaId: notificacion.actaId!),
+            ),
+          );
+        } else {
+          _mostrarMensaje('No se encontró el acta asociada');
+        }
+        break;
+
+      case 'compromiso_vencido':
+      case 'compromiso_proximo':
+        // Navegar a Mis Compromisos
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MisCompromisosScreen(),
+          ),
+        );
+        break;
+
+      case 'sistema':
+      default:
+        // Para notificaciones del sistema, solo mostrar mensaje
+        _mostrarMensaje('Notificación del sistema');
+        break;
+    }
+  }
+
+  void _mostrarMensaje(String mensaje) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensaje),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -336,7 +413,7 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
       elevation: notificacion.leida ? 0 : 2,
       color: notificacion.leida ? Colors.grey.shade50 : Colors.white,
       child: InkWell(
-        onTap: () => _marcarComoLeida(notificacion),
+        onTap: () => _navegarDesdeNotificacion(notificacion),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(

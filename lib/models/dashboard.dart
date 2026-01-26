@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'firma_pendiente.dart';
+import '../utils/date_utils.dart';
 
 class DashboardData {
   final Estadisticas estadisticas;
@@ -71,28 +72,13 @@ class ActaReciente {
   });
 
   factory ActaReciente.fromJson(Map<String, dynamic> json) {
-    DateTime parseDateTimeSafe(dynamic value, {DateTime? fallback}) {
-      if (value == null) return fallback ?? DateTime.now();
-      try {
-        if (value is String) {
-          return DateTime.parse(value);
-        } else if (value is DateTime) {
-          return value;
-        }
-      } catch (e) {
-        // ignore: avoid_print
-        print('⚠️ Error parseando fecha: $value - $e');
-      }
-      return fallback ?? DateTime.now();
-    }
-
     return ActaReciente(
       id: json['id'],
       numeroActa: json['numero_acta'],
       titulo: json['titulo'],
       estado: json['estado'],
-      fechaReunion: parseDateTimeSafe(json['fecha_reunion']),
-      fechaCreacion: parseDateTimeSafe(json['fecha_creacion']),
+      fechaReunion: DateParseUtils.parseOrDefault(json['fecha_reunion']),
+      fechaCreacion: DateParseUtils.parseOrDefault(json['fecha_creacion']),
     );
   }
 
@@ -141,26 +127,11 @@ class ActaInfo {
   });
 
   factory ActaInfo.fromJson(Map<String, dynamic> json) {
-    DateTime parseDateTimeSafe(dynamic value, {DateTime? fallback}) {
-      if (value == null) return fallback ?? DateTime.now();
-      try {
-        if (value is String) {
-          return DateTime.parse(value);
-        } else if (value is DateTime) {
-          return value;
-        }
-      } catch (e) {
-        // ignore: avoid_print
-        print('⚠️ Error parseando fecha: $value - $e');
-      }
-      return fallback ?? DateTime.now();
-    }
-
     return ActaInfo(
       id: json['id'],
       numeroActa: json['numero_acta'],
       titulo: json['titulo'],
-      fechaReunion: parseDateTimeSafe(json['fecha_reunion']),
+      fechaReunion: DateParseUtils.parseOrDefault(json['fecha_reunion']),
     );
   }
 }
@@ -185,25 +156,10 @@ class CompromisoProximo {
   });
 
   factory CompromisoProximo.fromJson(Map<String, dynamic> json) {
-    DateTime parseDateTimeSafe(dynamic value, {DateTime? fallback}) {
-      if (value == null) return fallback ?? DateTime.now();
-      try {
-        if (value is String) {
-          return DateTime.parse(value);
-        } else if (value is DateTime) {
-          return value;
-        }
-      } catch (e) {
-        // ignore: avoid_print
-        print('⚠️ Error parseando fecha límite: $value - $e');
-      }
-      return fallback ?? DateTime.now();
-    }
-
     return CompromisoProximo(
       id: json['id'],
       descripcion: json['descripcion'] ?? '',
-      fechaLimite: parseDateTimeSafe(json['fecha_limite']),
+      fechaLimite: DateParseUtils.parseOrDefault(json['fecha_limite']),
       estado: json['estado'] ?? '',
       porcentajeAvance: json['porcentaje_avance'] ?? 0,
       diasRestantes: json['dias_restantes'] ?? 0,

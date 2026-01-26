@@ -245,8 +245,7 @@ class _EditarActaScreenState extends State<EditarActaScreen> {
                   ? _descripcionesNuevos[i]
                   : null,
             );
-          } catch (e) {
-            print('Error al subir archivo: $e');
+          } catch (_) {
             // Continuar con los demás aunque uno falle
           }
         }

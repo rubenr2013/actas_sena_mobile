@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/date_utils.dart';
 
 class Notificacion {
   final int id;
@@ -10,6 +11,8 @@ class Notificacion {
   final DateTime fechaCreacion;
   final DateTime? fechaLectura;
   final Map<String, dynamic> metadata;
+  final int? actaId;
+  final int? compromisoId;
 
   Notificacion({
     required this.id,
@@ -21,9 +24,29 @@ class Notificacion {
     required this.fechaCreacion,
     this.fechaLectura,
     required this.metadata,
+    this.actaId,
+    this.compromisoId,
   });
 
   factory Notificacion.fromJson(Map<String, dynamic> json) {
+    // Intentar obtener actaId de diferentes fuentes
+    int? actaId = json['acta_id'] as int?;
+    if (actaId == null && json['acta'] != null) {
+      actaId = json['acta']['id'] as int?;
+    }
+    if (actaId == null && json['metadata'] != null) {
+      actaId = json['metadata']['acta_id'] as int?;
+    }
+
+    // Intentar obtener compromisoId de diferentes fuentes
+    int? compromisoId = json['compromiso_id'] as int?;
+    if (compromisoId == null && json['compromiso'] != null) {
+      compromisoId = json['compromiso']['id'] as int?;
+    }
+    if (compromisoId == null && json['metadata'] != null) {
+      compromisoId = json['metadata']['compromiso_id'] as int?;
+    }
+
     return Notificacion(
       id: json['id'],
       tipo: json['tipo'],
@@ -31,11 +54,11 @@ class Notificacion {
       mensaje: json['mensaje'],
       enlace: json['enlace'] ?? '',
       leida: json['leida'],
-      fechaCreacion: DateTime.parse(json['fecha_creacion']),
-      fechaLectura: json['fecha_lectura'] != null
-          ? DateTime.parse(json['fecha_lectura'])
-          : null,
+      fechaCreacion: DateParseUtils.parseOrDefault(json['fecha_creacion']),
+      fechaLectura: DateParseUtils.tryParse(json['fecha_lectura']),
       metadata: json['metadata'] ?? {},
+      actaId: actaId,
+      compromisoId: compromisoId,
     );
   }
 
