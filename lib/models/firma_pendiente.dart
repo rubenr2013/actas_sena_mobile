@@ -13,10 +13,12 @@ class FirmaPendiente {
 
   factory FirmaPendiente.fromJson(Map<String, dynamic> json) {
     return FirmaPendiente(
-      firmaId: json['firma_id'],
-      acta: ActaFirma.fromJson(json['acta']),
-      firmasCompletadas: json['firmas_completadas'],
-      porcentajeFirmado: json['porcentaje_firmado'],
+      firmaId: json['firma_id'] ?? 0,
+      acta: json['acta'] != null
+          ? ActaFirma.fromJson(json['acta'])
+          : ActaFirma.empty(),
+      firmasCompletadas: json['firmas_completadas'] ?? '0/0',
+      porcentajeFirmado: json['porcentaje_firmado'] ?? 0,
     );
   }
 }
@@ -50,21 +52,53 @@ class ActaFirma {
     required this.creador,
   });
 
+  factory ActaFirma.empty() {
+    return ActaFirma(
+      id: 0,
+      numeroActa: '',
+      titulo: '',
+      fechaReunion: DateTime.now(),
+      lugarReunion: '',
+      tipoReunion: '',
+      modalidad: '',
+      estado: '',
+      ordenDia: '',
+      desarrollo: '',
+      observaciones: '',
+      creador: CreadorInfo.empty(),
+    );
+  }
+
   factory ActaFirma.fromJson(Map<String, dynamic> json) {
     return ActaFirma(
-      id: json['id'],
-      numeroActa: json['numero_acta'],
-      titulo: json['titulo'],
-      fechaReunion: DateTime.parse(json['fecha_reunion']),
-      lugarReunion: json['lugar_reunion'],
-      tipoReunion: json['tipo_reunion'],
-      modalidad: json['modalidad'],
-      estado: json['estado'],
+      id: json['id'] ?? 0,
+      numeroActa: json['numero_acta'] ?? '',
+      titulo: json['titulo'] ?? '',
+      fechaReunion: _parseDate(json['fecha_reunion']),
+      lugarReunion: json['lugar_reunion'] ?? '',
+      tipoReunion: json['tipo_reunion'] ?? '',
+      modalidad: json['modalidad'] ?? '',
+      estado: json['estado'] ?? '',
       ordenDia: json['orden_dia'] ?? '',
       desarrollo: json['desarrollo'] ?? '',
       observaciones: json['observaciones'] ?? '',
-      creador: CreadorInfo.fromJson(json['creador']),
+      creador: json['creador'] != null
+          ? CreadorInfo.fromJson(json['creador'])
+          : CreadorInfo.empty(),
     );
+  }
+
+  static DateTime _parseDate(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is DateTime) return value;
+    if (value is String && value.isNotEmpty) {
+      try {
+        return DateTime.parse(value);
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+    return DateTime.now();
   }
 }
 
@@ -77,10 +111,17 @@ class CreadorInfo {
     required this.username,
   });
 
+  factory CreadorInfo.empty() {
+    return CreadorInfo(
+      nombreCompleto: '',
+      username: '',
+    );
+  }
+
   factory CreadorInfo.fromJson(Map<String, dynamic> json) {
     return CreadorInfo(
-      nombreCompleto: json['nombre_completo'],
-      username: json['username'],
+      nombreCompleto: json['nombre_completo'] ?? '',
+      username: json['username'] ?? '',
     );
   }
 }

@@ -16,7 +16,8 @@
       "Bash(Select-String -Pattern \"error|Error|ERROR|Built|FAILURE\")",
       "Bash(Select-Object -First 20)",
       "Bash(dir:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

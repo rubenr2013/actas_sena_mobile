@@ -17,7 +17,9 @@ class DashboardData {
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
     return DashboardData(
-      estadisticas: Estadisticas.fromJson(json['estadisticas']),
+      estadisticas: json['estadisticas'] != null
+          ? Estadisticas.fromJson(json['estadisticas'])
+          : Estadisticas.empty(),
       actasRecientes: (json['actas_recientes'] as List? ?? [])
           .map((item) => ActaReciente.fromJson(item))
           .toList(),
@@ -43,6 +45,15 @@ class Estadisticas {
     required this.compromisosActivos,
     required this.compromisosVencidos,
   });
+
+  factory Estadisticas.empty() {
+    return Estadisticas(
+      totalActas: 0,
+      firmasPendientes: 0,
+      compromisosActivos: 0,
+      compromisosVencidos: 0,
+    );
+  }
 
   factory Estadisticas.fromJson(Map<String, dynamic> json) {
     return Estadisticas(
@@ -73,10 +84,10 @@ class ActaReciente {
 
   factory ActaReciente.fromJson(Map<String, dynamic> json) {
     return ActaReciente(
-      id: json['id'],
-      numeroActa: json['numero_acta'],
-      titulo: json['titulo'],
-      estado: json['estado'],
+      id: json['id'] ?? 0,
+      numeroActa: json['numero_acta'] ?? '',
+      titulo: json['titulo'] ?? '',
+      estado: json['estado'] ?? '',
       fechaReunion: DateParseUtils.parseOrDefault(json['fecha_reunion']),
       fechaCreacion: DateParseUtils.parseOrDefault(json['fecha_creacion']),
     );
@@ -128,9 +139,9 @@ class ActaInfo {
 
   factory ActaInfo.fromJson(Map<String, dynamic> json) {
     return ActaInfo(
-      id: json['id'],
-      numeroActa: json['numero_acta'],
-      titulo: json['titulo'],
+      id: json['id'] ?? 0,
+      numeroActa: json['numero_acta'] ?? '',
+      titulo: json['titulo'] ?? '',
       fechaReunion: DateParseUtils.parseOrDefault(json['fecha_reunion']),
     );
   }
@@ -157,13 +168,15 @@ class CompromisoProximo {
 
   factory CompromisoProximo.fromJson(Map<String, dynamic> json) {
     return CompromisoProximo(
-      id: json['id'],
+      id: json['id'] ?? 0,
       descripcion: json['descripcion'] ?? '',
       fechaLimite: DateParseUtils.parseOrDefault(json['fecha_limite']),
       estado: json['estado'] ?? '',
       porcentajeAvance: json['porcentaje_avance'] ?? 0,
       diasRestantes: json['dias_restantes'] ?? 0,
-      acta: ActaInfo.fromJson(json['acta']),
+      acta: json['acta'] != null
+          ? ActaInfo.fromJson(json['acta'])
+          : ActaInfo(id: 0, numeroActa: '', titulo: '', fechaReunion: DateTime.now()),
     );
   }
 
