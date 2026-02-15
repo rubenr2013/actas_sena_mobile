@@ -3,8 +3,10 @@ import '../models/dashboard.dart';
 import 'api_service.dart';
 
 class DashboardService {
-  static Future<DashboardData> getDashboard() async {
-    const endpoint = '/actas/api/dashboard/';
+  static Future<DashboardData> getDashboard({bool vistaGlobal = false}) async {
+    final endpoint = vistaGlobal
+        ? '/actas/api/dashboard/?vista=global'
+        : '/actas/api/dashboard/';
 
     try {
       final token = await ApiService.getToken();

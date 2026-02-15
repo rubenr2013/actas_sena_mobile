@@ -38,12 +38,19 @@ class Estadisticas {
   final int firmasPendientes;
   final int compromisosActivos;
   final int compromisosVencidos;
+  // Campos adicionales para admin (vista global)
+  final int? actasEnRevision;
+  final int? totalUsuarios;
+  final int? usuariosNoVerificados;
 
   Estadisticas({
     required this.totalActas,
     required this.firmasPendientes,
     required this.compromisosActivos,
     required this.compromisosVencidos,
+    this.actasEnRevision,
+    this.totalUsuarios,
+    this.usuariosNoVerificados,
   });
 
   factory Estadisticas.empty() {
@@ -61,6 +68,9 @@ class Estadisticas {
       firmasPendientes: json['firmas_pendientes'] ?? 0,
       compromisosActivos: json['compromisos_activos'] ?? 0,
       compromisosVencidos: json['compromisos_vencidos'] ?? 0,
+      actasEnRevision: json['actas_en_revision'],
+      totalUsuarios: json['total_usuarios'],
+      usuariosNoVerificados: json['usuarios_no_verificados'],
     );
   }
 }
@@ -155,6 +165,7 @@ class CompromisoProximo {
   final int porcentajeAvance;
   final int diasRestantes;
   final ActaInfo acta;
+  final String? responsableNombre; // Visible en vista admin
 
   CompromisoProximo({
     required this.id,
@@ -164,6 +175,7 @@ class CompromisoProximo {
     required this.porcentajeAvance,
     required this.diasRestantes,
     required this.acta,
+    this.responsableNombre,
   });
 
   factory CompromisoProximo.fromJson(Map<String, dynamic> json) {
@@ -177,6 +189,7 @@ class CompromisoProximo {
       acta: json['acta'] != null
           ? ActaInfo.fromJson(json['acta'])
           : ActaInfo(id: 0, numeroActa: '', titulo: '', fechaReunion: DateTime.now()),
+      responsableNombre: json['responsable_nombre'],
     );
   }
 

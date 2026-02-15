@@ -181,8 +181,10 @@ class ApiService {
         rol == 'director';
   }
 
-  // Verificar si el usuario es admin
+  // Verificar si el usuario es admin (por rol o permisos Django)
   static Future<bool> isAdmin() async {
+    final rol = await getUserRol();
+    if (rol == 'admin') return true;
     final userData = await getUserData();
     if (userData == null) return false;
     return userData['is_staff'] == true || userData['is_superuser'] == true;

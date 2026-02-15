@@ -32,6 +32,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _error;
   int _notificacionesNoLeidas = 0;
   bool _canCreateActas = false;
+  bool _isAdmin = false;
+  bool _vistaGlobal = false;
 
   @override
   void initState() {
@@ -48,11 +50,15 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       final usuario = await AuthService.getCurrentUser();
-      final dashboard = await DashboardService.getDashboard();
+      final isAdmin = await ApiService.isAdmin();
+      final dashboard = await DashboardService.getDashboard(
+        vistaGlobal: isAdmin && _vistaGlobal,
+      );
       final canCreate = await ApiService.canCreateActas();
 
       setState(() {
         _usuario = usuario;
+        _isAdmin = isAdmin;
         _dashboardData = dashboard;
         _canCreateActas = canCreate;
         _isLoading = false;
@@ -87,6 +93,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
+  }
+
+  void _toggleVistaGlobal(bool value) {
+    setState(() {
+      _vistaGlobal = value;
+    });
+    _loadData();
   }
 
   @override
@@ -173,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       children: [
                         _buildHeader(),
+                        if (_isAdmin) _buildAdminToggle(),
                         _buildStats(),
                         _buildActasRecientes(),
                         _buildFirmasPendientes(),
@@ -216,12 +230,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  _usuario?.email ?? '',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _usuario?.email ?? '',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_isAdmin)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Admin',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -272,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ListTile(
             leading: const Icon(Icons.edit),
-            title: const Text('Firmar Actas'),
+            title: const Text('Firmas Pendientes'),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -386,9 +425,66 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildAdminToggle() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _vistaGlobal ? Colors.indigo : const Color(0xFF39A900),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _vistaGlobal ? Icons.public : Icons.person,
+            color: _vistaGlobal ? Colors.indigo : const Color(0xFF39A900),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _vistaGlobal ? 'Vista Global' : 'Mi Dashboard',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color:
+                    _vistaGlobal ? Colors.indigo : const Color(0xFF39A900),
+              ),
+            ),
+          ),
+          Switch(
+            value: _vistaGlobal,
+            onChanged: _toggleVistaGlobal,
+            activeColor: Colors.indigo,
+            inactiveThumbColor: const Color(0xFF39A900),
+            inactiveTrackColor: const Color(0xFF39A900).withOpacity(0.3),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStats() {
     if (_dashboardData == null) return const SizedBox.shrink();
 
+    if (_isAdmin && _vistaGlobal) {
+      return _buildAdminStats();
+    }
+    return _buildPersonalStats();
+  }
+
+  Widget _buildPersonalStats() {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -432,6 +528,83 @@ class _HomeScreenState extends State<HomeScreen> {
                   _dashboardData!.estadisticas.compromisosActivos.toString(),
                   Icons.assignment_turned_in,
                   Colors.purple,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminStats() {
+    final stats = _dashboardData!.estadisticas;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Total Actas',
+                  stats.totalActas.toString(),
+                  Icons.description,
+                  const Color(0xFF39A900),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'En Revisión',
+                  (stats.actasEnRevision ?? 0).toString(),
+                  Icons.rate_review,
+                  Colors.blue,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Firmas Pendientes',
+                  stats.firmasPendientes.toString(),
+                  Icons.edit,
+                  Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Compromisos Vencidos',
+                  stats.compromisosVencidos.toString(),
+                  Icons.warning,
+                  Colors.red,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Total Usuarios',
+                  (stats.totalUsuarios ?? 0).toString(),
+                  Icons.people,
+                  Colors.indigo,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'No Verificados',
+                  (stats.usuariosNoVerificados ?? 0).toString(),
+                  Icons.email_outlined,
+                  Colors.deepOrange,
                 ),
               ),
             ],
@@ -624,6 +797,23 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(firma.acta.titulo),
+            if (_isAdmin && _vistaGlobal && firma.usuarioNombre != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.person, size: 12, color: Colors.indigo),
+                  const SizedBox(width: 4),
+                  Text(
+                    firma.usuarioNombre!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.indigo,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 4),
             Text(
               dateFormat.format(firma.acta.fechaReunion),
@@ -631,27 +821,31 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        trailing: ElevatedButton(
-          onPressed: () async {
-            final resultado = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => FirmarActaScreen(firmaPendiente: firma),
-              ),
-            );
+        trailing: (_isAdmin && _vistaGlobal)
+            ? const Icon(Icons.arrow_forward_ios, size: 16)
+            : ElevatedButton(
+                onPressed: () async {
+                  final resultado = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          FirmarActaScreen(firmaPendiente: firma),
+                    ),
+                  );
 
-            // Si firmó, recargar dashboard
-            if (resultado == true && mounted) {
-              _loadData();
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF39A900),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          ),
-          child: const Text('Firmar'),
-        ),
+                  // Si firmó, recargar dashboard
+                  if (resultado == true && mounted) {
+                    _loadData();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF39A900),
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                child: const Text('Firmar'),
+              ),
       ),
     );
   }
@@ -709,6 +903,25 @@ class _HomeScreenState extends State<HomeScreen> {
               'Acta: ${compromiso.acta.numeroActa}',
               style: const TextStyle(fontSize: 11),
             ),
+            if (_isAdmin &&
+                _vistaGlobal &&
+                compromiso.responsableNombre != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.person, size: 12, color: Colors.indigo),
+                  const SizedBox(width: 4),
+                  Text(
+                    compromiso.responsableNombre!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.indigo,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 4),
             Row(
               children: [

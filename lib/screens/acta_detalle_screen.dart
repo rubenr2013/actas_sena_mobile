@@ -218,12 +218,17 @@ class _ActaDetalleScreenState extends State<ActaDetalleScreen> {
           await ActasService.aplicarSilencioAdministrativo(widget.actaId);
 
       if (mounted) {
+        final firmasActualizadas = resultado['firmas_actualizadas'];
+        final mensaje = resultado['message'] ?? 'Silencio administrativo aplicado';
+        final mensajeCompleto = firmasActualizadas != null
+            ? '$mensaje ($firmasActualizadas firmas actualizadas)'
+            : mensaje;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                resultado['message'] ?? 'Silencio administrativo aplicado'),
+            content: Text(mensajeCompleto),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
+            duration: const Duration(seconds: 4),
           ),
         );
 

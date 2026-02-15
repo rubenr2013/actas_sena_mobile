@@ -3,12 +3,14 @@ class FirmaPendiente {
   final ActaFirma acta;
   final String firmasCompletadas;
   final int porcentajeFirmado;
+  final String? usuarioNombre; // Visible en vista admin
 
   FirmaPendiente({
     required this.firmaId,
     required this.acta,
     required this.firmasCompletadas,
     required this.porcentajeFirmado,
+    this.usuarioNombre,
   });
 
   factory FirmaPendiente.fromJson(Map<String, dynamic> json) {
@@ -19,6 +21,7 @@ class FirmaPendiente {
           : ActaFirma.empty(),
       firmasCompletadas: json['firmas_completadas'] ?? '0/0',
       porcentajeFirmado: json['porcentaje_firmado'] ?? 0,
+      usuarioNombre: json['usuario_nombre'],
     );
   }
 }
