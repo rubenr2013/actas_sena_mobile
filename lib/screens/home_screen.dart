@@ -16,7 +16,7 @@ import 'notificaciones_screen.dart';
 import 'acta_detalle_screen.dart';
 import 'firmar_acta_screen.dart';
 import '../services/notificaciones_service.dart';
-import '../services/firmas_service.dart';
+import 'admin_usuarios_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -333,6 +333,23 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
+          // Solo visible para administradores
+          if (_isAdmin)
+            ListTile(
+              leading: const Icon(Icons.manage_accounts, color: Colors.indigo),
+              title: const Text(
+                'Gestión de Usuarios',
+                style: TextStyle(color: Colors.indigo),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AdminUsuariosScreen()),
+                );
+              },
+            ),
           ListTile(
             leading: Stack(
               children: [
@@ -497,6 +514,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   _dashboardData!.estadisticas.totalActas.toString(),
                   Icons.description,
                   const Color(0xFF39A900),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ActasListScreen()),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -506,6 +528,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   _dashboardData!.estadisticas.firmasPendientes.toString(),
                   Icons.edit,
                   Colors.orange,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const FirmasPendientesScreen()),
+                  ),
                 ),
               ),
             ],
@@ -519,6 +546,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   _dashboardData!.estadisticas.totalActas.toString(),
                   Icons.person,
                   Colors.blue,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ActasListScreen()),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -528,6 +560,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   _dashboardData!.estadisticas.compromisosActivos.toString(),
                   Icons.assignment_turned_in,
                   Colors.purple,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MisCompromisosScreen()),
+                  ),
                 ),
               ),
             ],
@@ -552,6 +589,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   stats.totalActas.toString(),
                   Icons.description,
                   const Color(0xFF39A900),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ActasListScreen()),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -561,6 +603,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   (stats.actasEnRevision ?? 0).toString(),
                   Icons.rate_review,
                   Colors.blue,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ActasListScreen()),
+                  ),
                 ),
               ),
             ],
@@ -574,6 +621,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   stats.firmasPendientes.toString(),
                   Icons.edit,
                   Colors.orange,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const FirmasPendientesScreen()),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -583,6 +635,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   stats.compromisosVencidos.toString(),
                   Icons.warning,
                   Colors.red,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MisCompromisosScreen()),
+                  ),
                 ),
               ),
             ],
@@ -615,43 +672,56 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
+      String title, String value, IconData icon, Color color,
+      {VoidCallback? onTap}) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: color),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+          child: Column(
+            children: [
+              Icon(icon, size: 32, color: color),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (onTap != null) ...[
+                const SizedBox(height: 6),
+                Icon(Icons.arrow_forward_ios,
+                    size: 10, color: Colors.grey[400]),
+              ],
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }

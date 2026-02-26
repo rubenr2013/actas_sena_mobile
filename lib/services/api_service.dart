@@ -103,6 +103,35 @@ class ApiService {
     }
   }
 
+  // PATCH
+  static Future<http.Response> patch(
+    String endpoint,
+    Map<String, dynamic> body, {
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+
+    try {
+      final response = await http
+          .patch(
+            url,
+            headers: _getHeaders(token: token),
+            body: json.encode(body),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw TimeoutException('La petición tardó demasiado tiempo');
+            },
+          );
+      return response;
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Verifica tu conexión a internet.');
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
   // DELETE
   static Future<http.Response> delete(String endpoint, {String? token}) async {
     final url = Uri.parse('$baseUrl$endpoint');

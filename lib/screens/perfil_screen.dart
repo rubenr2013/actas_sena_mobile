@@ -377,6 +377,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
           _buildInfoRow(Icons.person, 'Usuario', _perfil!.user.username),
           _buildInfoRow(Icons.email, 'Email', _perfil!.user.email),
           _buildInfoRow(Icons.badge, 'Rol', _perfil!.user.rol),
+          if (_perfil!.user.centro != null && _perfil!.user.centro!.isNotEmpty)
+            _buildInfoRow(Icons.business, 'Centro', _perfil!.user.centro!),
+          if (_perfil!.user.telefono != null && _perfil!.user.telefono!.isNotEmpty)
+            _buildInfoRow(Icons.phone, 'Teléfono', _perfil!.user.telefono!),
           _buildInfoRow(
             Icons.calendar_today,
             'Fecha de registro',
@@ -388,6 +392,94 @@ class _PerfilScreenState extends State<PerfilScreen> {
               'Último acceso',
               dateFormat.format(_perfil!.user.ultimoLogin!),
             ),
+          const SizedBox(height: 4),
+          _buildEstadoCuenta(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEstadoCuenta() {
+    if (_perfil == null) return const SizedBox();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.verified_user, size: 20, color: Color(0xFF39A900)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Estado de la cuenta',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _buildBadge(
+                      _perfil!.user.emailVerificado
+                          ? 'Email verificado'
+                          : 'Email no verificado',
+                      _perfil!.user.emailVerificado
+                          ? Colors.green
+                          : Colors.red,
+                      _perfil!.user.emailVerificado
+                          ? Icons.check_circle
+                          : Icons.cancel,
+                    ),
+                    _buildBadge(
+                      _perfil!.user.cuentaAprobada
+                          ? 'Cuenta aprobada'
+                          : 'Pendiente de aprobación',
+                      _perfil!.user.cuentaAprobada
+                          ? Colors.green
+                          : Colors.orange,
+                      _perfil!.user.cuentaAprobada
+                          ? Icons.check_circle
+                          : Icons.hourglass_empty,
+                    ),
+                    _buildBadge(
+                      _perfil!.user.activo ? 'Activo' : 'Inactivo',
+                      _perfil!.user.activo ? Colors.blue : Colors.grey,
+                      _perfil!.user.activo
+                          ? Icons.circle
+                          : Icons.remove_circle,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBadge(String texto, Color color, IconData icono) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icono, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            texto,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

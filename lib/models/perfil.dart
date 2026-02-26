@@ -22,12 +22,17 @@ class UsuarioPerfil {
   final String firstName;
   final String lastName;
   final String rol;
+  final String? centro;
+  final String? telefono;
   final DateTime fechaRegistro;
   final DateTime? ultimoLogin;
   final String? firmaDigital;
   final bool tieneFirma;
   final bool isStaff;
   final bool isSuperuser;
+  final bool emailVerificado;
+  final bool cuentaAprobada;
+  final bool activo;
 
   UsuarioPerfil({
     required this.id,
@@ -36,12 +41,17 @@ class UsuarioPerfil {
     required this.firstName,
     required this.lastName,
     required this.rol,
+    this.centro,
+    this.telefono,
     required this.fechaRegistro,
     this.ultimoLogin,
     this.firmaDigital,
     required this.tieneFirma,
     this.isStaff = false,
     this.isSuperuser = false,
+    this.emailVerificado = false,
+    this.cuentaAprobada = false,
+    this.activo = true,
   });
 
   factory UsuarioPerfil.fromJson(Map<String, dynamic> json) {
@@ -52,14 +62,21 @@ class UsuarioPerfil {
       firstName: json['first_name'] ?? '',
       lastName: json['last_name'] ?? '',
       rol: json['rol'] ?? '',
-      fechaRegistro: DateTime.parse(json['fecha_registro']),
+      centro: json['centro'],
+      telefono: json['telefono'],
+      fechaRegistro: json['fecha_registro'] != null
+          ? DateTime.parse(json['fecha_registro'])
+          : DateTime.now(),
       ultimoLogin: json['ultimo_login'] != null
           ? DateTime.parse(json['ultimo_login'])
           : null,
       firmaDigital: json['firma_digital'],
-      tieneFirma: json['tiene_firma'],
+      tieneFirma: json['tiene_firma'] ?? false,
       isStaff: json['is_staff'] ?? false,
       isSuperuser: json['is_superuser'] ?? false,
+      emailVerificado: json['email_verificado'] ?? false,
+      cuentaAprobada: json['cuenta_aprobada'] ?? false,
+      activo: json['activo'] ?? true,
     );
   }
 
