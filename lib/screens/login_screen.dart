@@ -212,22 +212,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Email
+                          // Correo o usuario
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             decoration: const InputDecoration(
-                              labelText: 'Correo electrónico',
-                              hintText: 'ejemplo@sena.edu.co',
-                              prefixIcon: Icon(Icons.email),
+                              labelText: 'Correo o usuario',
+                              hintText: 'ejemplo@sena.edu.co o admin',
+                              prefixIcon: Icon(Icons.person),
                               border: OutlineInputBorder(),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Por favor ingrese su correo';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Ingrese un correo válido';
+                                return 'Por favor ingrese su correo o usuario';
                               }
                               return null;
                             },

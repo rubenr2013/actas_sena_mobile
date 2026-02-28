@@ -16,6 +16,8 @@ import 'notificaciones_screen.dart';
 import 'acta_detalle_screen.dart';
 import 'firmar_acta_screen.dart';
 import '../services/notificaciones_service.dart';
+import '../services/admin_service.dart';
+import '../models/admin_usuario.dart';
 import 'admin_usuarios_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -34,6 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _canCreateActas = false;
   bool _isAdmin = false;
   bool _vistaGlobal = false;
+  int _adminTotalUsuarios = 0;
+  int _adminNoVerificados = 0;
 
   @override
   void initState() {
@@ -56,11 +60,27 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       final canCreate = await ApiService.canCreateActas();
 
+      // Cuando es admin en vista global, obtener stats de usuarios desde AdminService
+      int adminTotal = 0;
+      int adminNoVerificados = 0;
+      if (isAdmin && _vistaGlobal) {
+        try {
+          final result = await AdminService.getUsuarios();
+          adminTotal = result['total'] as int;
+          final usuarios = result['usuarios'] as List<AdminUsuario>;
+          adminNoVerificados = usuarios.where((u) => !u.emailVerificado).length;
+        } catch (_) {
+          // Si falla, mantener en 0 sin romper el dashboard
+        }
+      }
+
       setState(() {
         _usuario = usuario;
         _isAdmin = isAdmin;
         _dashboardData = dashboard;
         _canCreateActas = canCreate;
+        _adminTotalUsuarios = adminTotal;
+        _adminNoVerificados = adminNoVerificados;
         _isLoading = false;
       });
     } catch (e) {
@@ -650,18 +670,28 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _buildStatCard(
                   'Total Usuarios',
-                  (stats.totalUsuarios ?? 0).toString(),
+                  _adminTotalUsuarios.toString(),
                   Icons.people,
                   Colors.indigo,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AdminUsuariosScreen()),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
                   'No Verificados',
-                  (stats.usuariosNoVerificados ?? 0).toString(),
+                  _adminNoVerificados.toString(),
                   Icons.email_outlined,
                   Colors.deepOrange,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AdminUsuariosScreen()),
+                  ),
                 ),
               ),
             ],

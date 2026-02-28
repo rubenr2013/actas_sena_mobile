@@ -13,7 +13,8 @@ class AuthService {
       final response = await ApiService.post(
         AppConstants.loginEndpoint,
         {
-          'username': email, // Django usa 'username' aunque sea email
+          'username': email, // Django puede buscar por username
+          'email': email,    // o por email según la vista del backend
           'password': password,
         },
       );
